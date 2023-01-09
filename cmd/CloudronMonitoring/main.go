@@ -1,20 +1,21 @@
 package main
 
 import (
-	"log"
 	"os"
+	"sync"
 
-	"github.com/Setom29/CloudronMonitoring/pkg/parseYML"
+	"github.com/Setom29/CloudronMonitoring/pkg/cloudronStatus"
+	"github.com/Setom29/CloudronMonitoring/pkg/parseData"
 )
 
 func main() {
-	cfg, err := parseYML.ParseYAML("./config/config.yml")
+	var wg sync.WaitGroup
+	cfg, err := parseData.ParseConfig("./config/config.yml")
 	if err != nil {
-		log.Println(err)
 		os.Exit(1)
 	}
-	log.Println(cfg.Domain)
-
-	// requests.MakeRequest(cfg.Domain + cfg.Links[0] + )
+	wg.Add(1)
+	go cloudronStatus.StartMonitoring(cfg, &wg)
+	wg.Wait()
 
 }
