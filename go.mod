@@ -1,4 +1,4 @@
-module cloudronMonitoring
+module github.com/Setom29/CloudronMonitoring
 
 go 1.18
 

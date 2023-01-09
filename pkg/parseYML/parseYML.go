@@ -8,7 +8,6 @@ import (
 
 func ParseYAML(cfgFile string) (Cfg, error) {
 	file, err := ioutil.ReadFile(cfgFile)
-
 	if err != nil {
 		return Cfg{}, err
 	}
