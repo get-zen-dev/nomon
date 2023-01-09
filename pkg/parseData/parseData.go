@@ -1,4 +1,4 @@
-package parseYML
+package parseData
 
 import (
 	"io/ioutil"
@@ -15,7 +15,7 @@ type Cfg struct {
 	AppsUrl string `yaml:"AppsUrl"`
 }
 
-func ParseYAML(cfgFile string) (Cfg, error) {
+func ParseConfig(cfgFile string) (Cfg, error) {
 	file, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
 		return Cfg{}, err
