@@ -1,9 +1,7 @@
 package parseData
 
 import (
-	"encoding/json"
 	"io/ioutil"
-	"log"
 
 	"gopkg.in/yaml.v3"
 )
@@ -57,12 +55,3 @@ type contentsElemStruct struct {
 	Path  string `json:"path"`
 	Usage int    `json:"usage"`
 }
-
-func ParseStruct(arr []byte) {
-	var st contentsElemStruct
-	json.Unmarshal(arr, &st)
-	log.Println(st.Type)
-}
-
-// type DiskResponceStruct struct {
-// }
