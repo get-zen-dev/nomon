@@ -32,6 +32,25 @@ func ParseConfig(cfgFile string) (Cfg, error) {
 	return cfg, nil
 }
 
+type DiskResponceStruct struct {
+	Usage struct {
+		TS    int `json:"ts"`
+		Disks struct {
+			Sda diskSda `json:"/dev/sda"`
+		} `json:"disks"`
+	} `json:"usage"`
+}
+type diskSda struct {
+	Filesystem string               `json:"filesystem"`
+	Type       string               `json:"type"`
+	Size       int                  `json:"size"`
+	Used       int                  `json:"used"`
+	Available  int                  `json:"available"`
+	Capacity   float32              `json:"capacity"`
+	Mountpoint string               `json:"mountpoint"`
+	Contents   []contentsElemStruct `json:"contents"`
+}
+
 type contentsElemStruct struct {
 	Type  string `json:"type"`
 	Id    string `json:"id"`
@@ -42,12 +61,8 @@ type contentsElemStruct struct {
 func ParseStruct(arr []byte) {
 	var st contentsElemStruct
 	json.Unmarshal(arr, &st)
-	log.Println(st)
+	log.Println(st.Type)
 }
 
 // type DiskResponceStruct struct {
-// }
-
-// type Contents struct {
-// 	contents []contentsElemStruct
 // }
