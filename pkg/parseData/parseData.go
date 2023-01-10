@@ -3,6 +3,7 @@ package parseData
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 
 	"gopkg.in/yaml.v3"
 )
@@ -31,21 +32,22 @@ func ParseConfig(cfgFile string) (Cfg, error) {
 	return cfg, nil
 }
 
-type DiskResponceStruct struct {
-}
-
-type Contents struct {
-	contents []contentsElemStruct
-}
-
 type contentsElemStruct struct {
-	Type  string
-	id    string
-	path  string
-	usage int
+	Type  string `json:"type"`
+	Id    string `json:"id"`
+	Path  string `json:"path"`
+	Usage int    `json:"usage"`
 }
 
-func parseStruct(str string) {
+func ParseStruct(arr []byte) {
 	var st contentsElemStruct
-	json.Unmarshal(str, &st)
+	json.Unmarshal(arr, &st)
+	log.Println(st)
 }
+
+// type DiskResponceStruct struct {
+// }
+
+// type Contents struct {
+// 	contents []contentsElemStruct
+// }
