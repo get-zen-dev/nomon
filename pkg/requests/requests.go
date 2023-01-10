@@ -5,16 +5,17 @@ import (
 	"net/http"
 )
 
-func MakeRequest(url string) (string, error) {
+func MakeRequest(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", err
+		return []byte{}, err
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return []byte{}, err
 	}
 
-	return string(body), nil
+	return body, nil
 }

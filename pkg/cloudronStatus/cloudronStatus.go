@@ -31,9 +31,9 @@ func StartMonitoring(cfg parseData.Cfg, wg *sync.WaitGroup) {
 
 func (cloudronServ *CloudronServer) getCpuStatus() string {
 	for {
-		res, err := requests.MakeRequest(cloudronServ.cfg.Domain + cloudronServ.cfg.DiskUrl + "?access_token=" + cloudronServ.cfg.Token)
+		res, err := requests.MakeRequest(cloudronServ.cfg.Domain + cloudronServ.cfg.CpuUrl + "&access_token=" + cloudronServ.cfg.Token)
 		if err != nil {
-			log.Println("Handling error from getCpuStatus:", err)
+			log.Println("Handling error from getCpuStatus():", err)
 		} else {
 			return res
 		}
@@ -44,7 +44,7 @@ func (cloudronServ *CloudronServer) getDiskStatus() string {
 	for {
 		res, err := requests.MakeRequest(cloudronServ.cfg.Domain + cloudronServ.cfg.DiskUrl + "?access_token=" + cloudronServ.cfg.Token)
 		if err != nil {
-			log.Println("Handling error from getDiskStatus:", err)
+			log.Println("Handling error from getDiskStatus():", err)
 		} else {
 			return res
 		}
@@ -55,7 +55,7 @@ func (cloudronServ *CloudronServer) getRamStatus() string {
 	for {
 		res, err := requests.MakeRequest(cloudronServ.cfg.Domain + cloudronServ.cfg.RamUrl + "?access_token=" + cloudronServ.cfg.Token)
 		if err != nil {
-			log.Println("Handling error from getRamStatus:", err)
+			log.Println("Handling error from getRamStatus():", err)
 		} else {
 			return res
 		}

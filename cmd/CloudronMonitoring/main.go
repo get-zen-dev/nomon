@@ -17,5 +17,4 @@ func main() {
 	wg.Add(1)
 	go cloudronStatus.StartMonitoring(cfg, &wg)
 	wg.Wait()
-
 }
