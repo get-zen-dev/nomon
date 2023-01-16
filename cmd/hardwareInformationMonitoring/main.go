@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/mackerelio/go-osstat/cpu"
-	"github.com/mackerelio/go-osstat/memory"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
 type CloudronServerStatus struct {
@@ -18,6 +19,8 @@ type CloudronServerStatus struct {
 	duration    time.Duration
 	err         error
 }
+
+var CloudronServer *CloudronServerStatus
 
 func NewCloudronServerConnection(duration uint64) *CloudronServerStatus {
 	return &CloudronServerStatus{CpuStatus: 0, MemStatus: 0, DiskStatus: 0, LastUpdated: time.Now(), err: nil, duration: time.Duration(duration)}
@@ -30,34 +33,40 @@ func main() {
 }
 
 func StartMonitoring() {
-	serverStatus := NewCloudronServerConnection(5)
-	serverStatus.getCpu()
-	serverStatus.getMem()
-	serverStatus.getDisk()
+	CloudronServer = NewCloudronServerConnection(5)
+	CloudronServer.getCpu()
+	CloudronServer.getMem()
+	CloudronServer.getDisk()
 
-	log.Println("CPU status:", serverStatus.CpuStatus)
-	log.Println("Memory status:", serverStatus.MemStatus)
+	log.Println("CPU status:", CloudronServer.CpuStatus)
+	log.Println("Memory status:", CloudronServer.MemStatus)
+	log.Println("Disk status:", CloudronServer.DiskStatus)
+
 }
 
 func (serverStatus *CloudronServerStatus) getCpu() {
-	cpuInfo, err := cpu.Get()
+	totalPercent, err := cpu.Percent(3*time.Second, false)
 	if err != nil {
 		log.Println("Error getting CPU: ", err)
 	}
-	serverStatus.MemStatus = float64(cpuInfo.System) / float64(cpuInfo.Total) * 100
+
+	serverStatus.CpuStatus = totalPercent[0]
 }
 
 func (serverStatus *CloudronServerStatus) getMem() {
-	memInfo, err := memory.Get()
+	memInfo, err := mem.VirtualMemory()
 	if err != nil {
 		log.Println("Error getting Memory: ", err)
 	}
-
-	serverStatus.CpuStatus = float64(memInfo.Used) / float64(memInfo.Total) * 100
+	serverStatus.MemStatus = memInfo.UsedPercent
 }
 
 func (serverStatus *CloudronServerStatus) getDisk() {
-	//not implemented
+	diskInfo, err := disk.Usage("/")
+	if err != nil {
+		log.Println("Error getting Disk: ", err)
+	}
+	serverStatus.DiskStatus = diskInfo.UsedPercent
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
