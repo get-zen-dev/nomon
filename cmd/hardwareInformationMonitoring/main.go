@@ -33,53 +33,32 @@ func StartMonitoring() {
 	serverStatus := NewCloudronServerConnection(5)
 	serverStatus.getCpu()
 	serverStatus.getMem()
-	// serverStatus.getDisk()
+	serverStatus.getDisk()
 
 	log.Println("CPU status:", serverStatus.CpuStatus)
 	log.Println("Memory status:", serverStatus.MemStatus)
 }
 
 func (serverStatus *CloudronServerStatus) getCpu() {
-	before, err := cpu.Get()
+	cpuInfo, err := cpu.Get()
 	if err != nil {
 		log.Println("Error getting CPU: ", err)
 	}
-	time.Sleep(time.Duration(serverStatus.duration) * time.Second)
-	after, err := cpu.Get()
-	if err != nil {
-		log.Println("Error getting CPU: ", err)
-	}
-	total := float64(after.Total - before.Total)
-	serverStatus.MemStatus = total
+	serverStatus.MemStatus = float64(cpuInfo.System) / float64(cpuInfo.Total) * 100
 }
 
 func (serverStatus *CloudronServerStatus) getMem() {
-	before, err := memory.Get()
+	memInfo, err := memory.Get()
 	if err != nil {
 		log.Println("Error getting Memory: ", err)
 	}
-	time.Sleep(time.Duration(serverStatus.duration) * time.Second)
-	after, err := memory.Get()
-	if err != nil {
-		log.Println("Error getting Memory: ", err)
-	}
-	total := float64(after.Total - before.Total)
-	serverStatus.CpuStatus = total
+
+	serverStatus.CpuStatus = float64(memInfo.Used) / float64(memInfo.Total) * 100
 }
 
-// func (serverStatus *CloudronServerStatus) getDisk() (float64, error) {
-// 	before, err := disk.Get()
-// 	if err != nil {
-// 		return float64(0), err
-// 	}
-// 	time.Sleep(time.Duration(serverStatus.duration) * time.Second)
-// 	after, err := disk.Get()
-// 	if err != nil {
-// 		return float64(0), err
-// 	}
-// 	total := float64(after.Total - before.Total)
-// 	return float64(after.Used-before.Used) / total * 100, nil
-// }
+func (serverStatus *CloudronServerStatus) getDisk() {
+	//not implemented
+}
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
