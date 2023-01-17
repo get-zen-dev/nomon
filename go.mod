@@ -18,6 +18,7 @@ require (
 )
 
 require (
+	github.com/gorilla/mux v1.8.0
 	github.com/shirou/gopsutil/v3 v3.22.12
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect

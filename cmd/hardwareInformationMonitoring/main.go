@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/mem"
@@ -31,9 +33,22 @@ func NewCloudronServerConnection(duration uint64) *CloudronServerStatus {
 func main() {
 	CloudronServer = NewCloudronServerConnection(5)
 	StartMonitoring()
-	log.Println("Starting server on 127.0.0.1:8080")
-	http.HandleFunc("/", handler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Printf("Cloudron stats:\n CPU Usage: %f\n Disk Usage: %f\n Memory Usage: %f\n", CloudronServer.CpuStatus, CloudronServer.DiskStatus, CloudronServer.MemStatus)
+	log.Println("Starting server on http://127.0.0.1:8080/")
+
+	r := newRouter()
+	log.Fatal(http.ListenAndServe(":8080", r))
+}
+
+func newRouter() *mux.Router {
+	r := mux.NewRouter()
+	r.HandleFunc("/", indexHandler).Methods("GET")
+	staticFileDirectory := http.Dir("./")
+	staticFileHandler := http.StripPrefix("./", http.FileServer(staticFileDirectory))
+	r.PathPrefix("./").Handler(staticFileHandler).Methods("GET")
+	r.HandleFunc("/breakpoints", createBreakpointsHandler).Methods("POST")
+
+	return r
 }
 
 func StartMonitoring() {
@@ -74,8 +89,31 @@ func (serverStatus *CloudronServerStatus) getDisk() {
 	serverStatus.DiskStatus = diskInfo.UsedPercent
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+var tpl = template.Must(template.ParseFiles("./index.html"))
 
-	fmt.Fprintf(w, "Cloudron stats:\n CPU Usage: %f\n Disk Usage: %f\n Memory Usage: %f\n", CloudronServer.CpuStatus, CloudronServer.DiskStatus, CloudronServer.MemStatus)
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	tpl.Execute(w, nil)
+}
 
+type Breakpoints struct {
+	X string `json:"x"`
+	Y string `json:"y"`
+}
+
+func createBreakpointsHandler(w http.ResponseWriter, r *http.Request) {
+	b := Breakpoints{}
+
+	err := r.ParseForm()
+
+	if err != nil {
+		fmt.Println(fmt.Errorf("Error: %v", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	b.X = r.Form.Get("x")
+	b.Y = r.Form.Get("y")
+
+	log.Println(b)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
