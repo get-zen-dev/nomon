@@ -14,6 +14,8 @@ type ServerStatus struct {
 	CpuStatus        float64
 	MemStatus        float64
 	MemTotal         uint64
+	SwapStatus       float64
+	SwapTotal        uint64
 	DiskStatus       float64
 	DiskTotal        uint64
 	LastUpdated      time.Time
@@ -29,6 +31,8 @@ func NewCloudronServerConnection(duration uint64) *ServerStatus {
 		CpuStatus:        0,
 		MemStatus:        0,
 		MemTotal:         0,
+		SwapStatus:       0,
+		SwapTotal:        0,
 		DiskStatus:       0,
 		DiskTotal:        0,
 		LastUpdated:      time.Now(),
@@ -42,7 +46,10 @@ func StartMonitoring() {
 
 	serverStat := NewCloudronServerConnection(5)
 	serverStat.getTotalMetrics()
-	log.Printf("\nClourdon total stats:\nMemory total: %d\nDisk total: %d\n", serverStat.MemTotal, serverStat.DiskTotal)
+	log.Printf("\nClourdon total stats:\nMemory total: %fGB\nDisk total: %fGB\nSwap total: %fGB",
+		float64(serverStat.MemTotal)/1024/1024/1024,
+		float64(serverStat.DiskTotal)/1024/1024/1024,
+		float64(serverStat.SwapTotal)/1024/1024/1024)
 	for {
 		serverStat.wg.Add(3)
 
@@ -52,10 +59,10 @@ func StartMonitoring() {
 
 		serverStat.wg.Wait()
 		serverStat.LastUpdated = time.Now()
-		log.Printf("Cloudron stats:\n CPU Usage: %f\n Disk Usage: %f\n Memory Usage: %f\n", serverStat.CpuStatus, serverStat.DiskStatus, serverStat.MemStatus)
+		log.Printf("Cloudron stats:\n CPU Usage: %f%%\n Disk Usage: %f%%\n Memory Usage: %f%%\n Swap Usage: %f%%\n",
+			serverStat.CpuStatus, serverStat.DiskStatus, serverStat.MemStatus, serverStat.SwapStatus)
 		time.Sleep((serverStat.duration - serverStat.CpuUsageDuration) * time.Second)
 	}
-
 }
 
 func (serverStatus *ServerStatus) getCpu() {
@@ -72,8 +79,13 @@ func (serverStatus *ServerStatus) getMem() {
 	defer serverStatus.wg.Done()
 	memInfo, err := mem.VirtualMemory()
 	if err != nil {
-		log.Println("Error getting Memory: ", err)
+		log.Println("Error getting mem.VirtualMemory(): ", err)
 	}
+	swapInfo, err := mem.SwapMemory()
+	if err != nil {
+		log.Println("Error getting mem.SwapMemory():", err)
+	}
+	serverStatus.SwapStatus = swapInfo.UsedPercent
 	serverStatus.MemStatus = memInfo.UsedPercent
 }
 
@@ -98,4 +110,6 @@ func (serverStatus *ServerStatus) getTotalMetrics() {
 	serverStatus.MemTotal = memInfo.Total
 
 	serverStatus.DiskTotal = diskInfo.Total
+
+	serverStatus.SwapTotal = memInfo.SwapTotal
 }
