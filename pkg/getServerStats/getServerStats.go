@@ -18,14 +18,14 @@ type ServerStatus struct {
 	SwapTotal        uint64
 	DiskStatus       float64
 	DiskTotal        uint64
-	LastUpdated      time.Time
 	duration         time.Duration
 	CpuUsageDuration time.Duration
 	err              error
 	wg               sync.WaitGroup
+	limit            int
 }
 
-func NewCloudronServerConnection(duration uint64) *ServerStatus {
+func NewServerConnection(limit int, duration time.Duration) *ServerStatus {
 
 	return &ServerStatus{
 		CpuStatus:        0,
@@ -35,16 +35,16 @@ func NewCloudronServerConnection(duration uint64) *ServerStatus {
 		SwapTotal:        0,
 		DiskStatus:       0,
 		DiskTotal:        0,
-		LastUpdated:      time.Now(),
-		duration:         time.Duration(duration),
+		duration:         duration,
 		CpuUsageDuration: time.Duration(2),
 		err:              nil,
-		wg:               sync.WaitGroup{}}
+		wg:               sync.WaitGroup{},
+		limit:            limit}
 }
 
-func StartMonitoring() {
+func StartMonitoring(limit int, duration time.Duration) {
 
-	serverStat := NewCloudronServerConnection(5)
+	serverStat := NewServerConnection(limit, duration)
 	serverStat.getTotalMetrics()
 	log.Printf("\nClourdon total stats:\nMemory total: %fGB\nDisk total: %fGB\nSwap total: %fGB",
 		float64(serverStat.MemTotal)/1024/1024/1024,
@@ -58,7 +58,6 @@ func StartMonitoring() {
 		go serverStat.getDisk()
 
 		serverStat.wg.Wait()
-		serverStat.LastUpdated = time.Now()
 		log.Printf("Cloudron stats:\n CPU Usage: %f%%\n Disk Usage: %f%%\n Memory Usage: %f%%\n Swap Usage: %f%%\n",
 			serverStat.CpuStatus, serverStat.DiskStatus, serverStat.MemStatus, serverStat.SwapStatus)
 		time.Sleep((serverStat.duration - serverStat.CpuUsageDuration) * time.Second)
