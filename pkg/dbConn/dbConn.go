@@ -2,9 +2,8 @@ package dbConn
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
-	"sync"
+	"log"
 	"time"
 )
 
@@ -16,10 +15,8 @@ type ServerStatus struct {
 }
 
 type DB struct {
-	sql    *sql.DB
-	stmt   *sql.Stmt
-	buffer []serverStatus
-	mutex  *sync.Mutex
+	sql  *sql.DB
+	stmt *sql.Stmt
 }
 
 func NewDB(dbFile string) (*DB, error) {
@@ -40,11 +37,11 @@ func NewDB(dbFile string) (*DB, error) {
 		) VALUES (
 			?, ?, ?, ?
 		)`
+
 	sqlDB, err := sql.Open("sqlite3", dbFile)
 	if err != nil {
 		return nil, err
 	}
-
 	if _, err = sqlDB.Exec(schemaSQL); err != nil {
 		return nil, err
 	}
@@ -53,45 +50,25 @@ func NewDB(dbFile string) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	db := DB{
-		sql:    sqlDB,
-		stmt:   stmt,
-		buffer: make([]serverStatus, 0, 32),
+		sql:  sqlDB,
+		stmt: stmt,
 	}
 	return &db, nil
 }
 
-func (db *DB) Add(stat serverStatus) error {
-	if len(db.buffer) == cap(db.buffer) {
-		return errors.New("server status buffer is full")
-	}
-
-	db.buffer = append(db.buffer, stat)
-	if len(db.buffer) == cap(db.buffer) {
-		if err := db.Flush(); err != nil {
-			return fmt.Errorf("unable to flush buffer: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (db *DB) Flush() error {
+func (db *DB) Add(stat ServerStatus) error {
 	tx, err := db.sql.Begin()
 	if err != nil {
 		return err
 	}
 
-	for _, stat := range db.buffer {
-		_, err := tx.Stmt(db.stmt).Exec(stat.Time, stat.CPUStatus, stat.RAMStatus, stat.DiskStatus)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
+	_, err = tx.Stmt(db.stmt).Exec(stat.Time, stat.CPUStatus, stat.RAMStatus, stat.DiskStatus)
+	if err != nil {
+		tx.Rollback()
+		return err
 	}
 
-	db.buffer = db.buffer[:0]
 	return tx.Commit()
 }
 
@@ -101,9 +78,17 @@ func (db *DB) Close() error {
 		db.sql.Close()
 	}()
 
-	if err := db.Flush(); err != nil {
-		return err
-	}
-
 	return nil
+}
+
+func (db *DB) PrintValues() {
+	rows, err := db.sql.Query("SELECT time, cpustatus, ramstatus, diskstatus FROM serverStatus")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		fmt.Println(rows.Scan())
+	}
 }
