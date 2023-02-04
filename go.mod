@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
+	github.com/mattn/go-sqlite3 v1.14.16 // indirect
 	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.11 // indirect
 	github.com/tklauser/numcpus v0.6.0 // indirect
