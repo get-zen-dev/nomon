@@ -34,7 +34,7 @@ func NewDB(dbFile string) (*DB, error) {
 		CREATE INDEX IF NOT EXISTS status_time ON serverStatus(time);
 		`
 	insertSQL := `
-		INSERT INTO trades (
+		INSERT INTO serverStatus (
 			time, cpustatus, ramstatus, diskstatus
 		) VALUES (
 			?, ?, ?, ?
