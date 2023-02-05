@@ -2,7 +2,6 @@ package dbConn
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"time"
 
@@ -91,6 +90,8 @@ func (db *DB) PrintValues() {
 	defer rows.Close()
 
 	for rows.Next() {
-		fmt.Println(rows.Scan())
+		stat := ServerStatus{}
+		rows.Scan(stat.Time, stat.CPUStatus, stat.RAMStatus, stat.DiskStatus)
+		log.Println(stat)
 	}
 }
