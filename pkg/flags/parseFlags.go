@@ -17,8 +17,8 @@ func ParseFlags() (Flags, error) {
 	f := Flags{}
 
 	limit := flag.Float64("p", 90, "max usage in %% of RAM, CPU and Disk")
-	duration := flag.Duration("t", time.Second*60, "time period for checking")
-	checkTime := flag.Duration("c", time.Second*10, "check server status every _ seconds")
+	duration := flag.Duration("t", time.Duration(time.Second*60), "time period for checking")
+	checkTime := flag.Duration("c", time.Duration(time.Second*10), "check server status every _ seconds")
 	dbFile := flag.String("f", "serverStats.db", "database filename")
 
 	flag.Parse()

@@ -2,7 +2,9 @@ package dbConn
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
+	"os"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -20,6 +22,7 @@ type DB struct {
 	stmt *sql.Stmt
 }
 
+// NewDB creates new database
 func NewDB(dbFile string) (*DB, error) {
 
 	schemaSQL := `
@@ -38,7 +41,10 @@ func NewDB(dbFile string) (*DB, error) {
 		) VALUES (
 			?, ?, ?, ?
 		)`
-
+	err := os.Remove(dbFile)
+	if err != nil {
+		log.Println(err)
+	}
 	sqlDB, err := sql.Open("sqlite3", dbFile)
 	if err != nil {
 		return nil, err
@@ -58,6 +64,7 @@ func NewDB(dbFile string) (*DB, error) {
 	return &db, nil
 }
 
+// Add adds row to the database
 func (db *DB) Add(stat ServerStatus) error {
 	tx, err := db.sql.Begin()
 	if err != nil {
@@ -73,6 +80,7 @@ func (db *DB) Add(stat ServerStatus) error {
 	return tx.Commit()
 }
 
+// Close closes the database and statement
 func (db *DB) Close() error {
 	defer func() {
 		db.stmt.Close()
@@ -82,16 +90,25 @@ func (db *DB) Close() error {
 	return nil
 }
 
+// PrintValues prints all rows from database
 func (db *DB) PrintValues() {
-	rows, err := db.sql.Query("SELECT time, cpustatus, ramstatus, diskstatus FROM serverStatus")
+	rows, err := db.sql.Query("SELECT * FROM serverStatus")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer rows.Close()
 
+	stats := []ServerStatus{}
 	for rows.Next() {
 		stat := ServerStatus{}
-		rows.Scan(stat.Time, stat.CPUStatus, stat.RAMStatus, stat.DiskStatus)
-		log.Println(stat)
+		err := rows.Scan(&stat.Time, &stat.CPUStatus, &stat.RAMStatus, &stat.DiskStatus)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		stats = append(stats, stat)
+	}
+	for _, stat := range stats {
+		fmt.Println(stat.Time, stat.CPUStatus, stat.RAMStatus, stat.DiskStatus)
 	}
 }

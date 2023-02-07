@@ -10,7 +10,7 @@ import (
 )
 
 func GetCpu(duration time.Duration) float64 {
-	totalPercent, err := cpu.Percent(duration*time.Second, false)
+	totalPercent, err := cpu.Percent(duration, false)
 	if err != nil {
 		log.Println("Error getting CPU: ", err)
 		return 0

@@ -39,12 +39,15 @@ func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 			db.Close()
 			return
 		default:
-			stat := dbConn.ServerStatus{CPUStatus: getServerStats.GetCpu(monitor.F.CheckTime), RAMStatus: getServerStats.GetMem(), DiskStatus: getServerStats.GetDisk()}
-			stat.Time = time.Now()
+			stat := dbConn.ServerStatus{CPUStatus: getServerStats.GetCpu(monitor.F.CheckTime), RAMStatus: getServerStats.GetMem(), DiskStatus: getServerStats.GetDisk(), Time: time.Now()}
+			log.Println(stat)
 			if err != nil {
 				log.Println(err)
 			}
-			monitor.DB.Add(stat)
+			err = monitor.DB.Add(stat)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}
 }
