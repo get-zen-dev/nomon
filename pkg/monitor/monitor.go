@@ -1,6 +1,7 @@
 package monitor
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -27,6 +28,7 @@ func NewMonitor(f flags.Flags) *Monitor {
 	return &m
 }
 
+// StartMonitoring creates new db connection and pushes statistics to the database
 func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 	log.Println("Starting monitoring")
 	db, err := dbConn.NewDB(monitor.F.DBFile)
@@ -39,8 +41,11 @@ func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 			db.Close()
 			return
 		default:
-			stat := dbConn.ServerStatus{CPUStatus: getServerStats.GetCpu(monitor.F.CheckTime), RAMStatus: getServerStats.GetMem(), DiskStatus: getServerStats.GetDisk(), Time: time.Now()}
-			log.Println(stat)
+			stat := dbConn.ServerStatus{
+				CPUStatus:  getServerStats.GetCpu(monitor.F.CheckTime),
+				RAMStatus:  getServerStats.GetMem(),
+				DiskStatus: getServerStats.GetDisk(),
+				Time:       time.Now()}
 			if err != nil {
 				log.Println(err)
 			}
@@ -48,6 +53,41 @@ func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 			if err != nil {
 				log.Println(err)
 			}
+			monitor.CheckStatus()
 		}
+	}
+}
+
+// CheckStatus reads data from database and alerts if metric's usage limit exceeded
+func (monitor *Monitor) CheckStatus() {
+	monitor.DB.Sql.Exec(fmt.Sprintf("DELETE FROM serverStatus WHERE time < Datetime('now', '-%d seconds', 'localtime');", monitor.F.Duration))
+	rows, err := monitor.DB.Sql.Query(fmt.Sprintf("SELECT * FROM serverStatus WHERE time >= Datetime('now', '-%d seconds', 'localtime');", monitor.F.Duration))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	counter := 0
+	CPUCumSum, RAMCumSum, DiskCumSum := 0.0, 0.0, 0.0
+	for rows.Next() {
+		counter++
+		stat := dbConn.ServerStatus{}
+		err := rows.Scan(&stat.Time, &stat.CPUStatus, &stat.RAMStatus, &stat.DiskStatus)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		CPUCumSum += stat.CPUStatus
+		RAMCumSum += stat.RAMStatus
+		DiskCumSum += stat.DiskStatus
+	}
+	if CPUCumSum/float64(counter) > monitor.F.Limit {
+		log.Println("CPU usage limit exceeded")
+	}
+	if RAMCumSum/float64(counter) > monitor.F.Limit {
+		log.Println("RAM usage limit exceeded")
+	}
+	if DiskCumSum/float64(counter) > monitor.F.Limit {
+		log.Println("Disk usage limit exceeded")
 	}
 }

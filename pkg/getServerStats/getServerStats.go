@@ -9,8 +9,9 @@ import (
 	"github.com/shirou/gopsutil/mem"
 )
 
-func GetCpu(duration time.Duration) float64 {
-	totalPercent, err := cpu.Percent(duration, false)
+// GetCpu returns Cpu usage in percentage
+func GetCpu(duration int) float64 {
+	totalPercent, err := cpu.Percent(time.Duration(duration)*time.Second, false)
 	if err != nil {
 		log.Println("Error getting CPU: ", err)
 		return 0
@@ -18,6 +19,7 @@ func GetCpu(duration time.Duration) float64 {
 	return totalPercent[0]
 }
 
+// GetMem returns Ram usage in percentage
 func GetMem() float64 {
 	memInfo, err := mem.VirtualMemory()
 	if err != nil {
@@ -27,6 +29,7 @@ func GetMem() float64 {
 	return memInfo.UsedPercent
 }
 
+// GetSwap returns Swap usage in percentage
 func GetSwap() float64 {
 	swapInfo, err := mem.SwapMemory()
 	if err != nil {
@@ -36,6 +39,7 @@ func GetSwap() float64 {
 	return swapInfo.UsedPercent
 }
 
+// GetDisk returns Disk usage in percentage
 func GetDisk() float64 {
 	diskInfo, err := disk.Usage("/")
 	if err != nil {
@@ -45,6 +49,7 @@ func GetDisk() float64 {
 	return diskInfo.UsedPercent
 }
 
+// GetTotalMetrics returns Ram, Swap, and Disk total values
 func GetTotalMetrics() (uint64, uint64, uint64) {
 	memInfo, err := mem.VirtualMemory()
 	if err != nil {

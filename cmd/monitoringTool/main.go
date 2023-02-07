@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/Setom29/CloudronMonitoring/pkg/flags"
 	"github.com/Setom29/CloudronMonitoring/pkg/monitor"
@@ -27,10 +26,8 @@ func main() {
 
 	m := monitor.NewMonitor(f)
 	go m.StartMonitoring(sigChan)
-	time.Sleep(time.Second * 25)
-	sigChan <- syscall.SIGQUIT
 
-	m.DB.PrintValues()
+	<-sigChan
 
 	// log.Println("Starting server on http://127.0.0.1:8080/")
 

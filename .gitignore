@@ -4,3 +4,5 @@ config/
 Notes.txt
 
 .vscode/launch.json
+
+serverStats.db

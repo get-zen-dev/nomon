@@ -18,8 +18,8 @@ type ServerStatus struct {
 }
 
 type DB struct {
-	sql  *sql.DB
-	stmt *sql.Stmt
+	Sql  *sql.DB
+	Stmt *sql.Stmt
 }
 
 // NewDB creates new database
@@ -58,20 +58,20 @@ func NewDB(dbFile string) (*DB, error) {
 		return nil, err
 	}
 	db := DB{
-		sql:  sqlDB,
-		stmt: stmt,
+		Sql:  sqlDB,
+		Stmt: stmt,
 	}
 	return &db, nil
 }
 
 // Add adds row to the database
 func (db *DB) Add(stat ServerStatus) error {
-	tx, err := db.sql.Begin()
+	tx, err := db.Sql.Begin()
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Stmt(db.stmt).Exec(stat.Time, stat.CPUStatus, stat.RAMStatus, stat.DiskStatus)
+	_, err = tx.Stmt(db.Stmt).Exec(stat.Time, stat.CPUStatus, stat.RAMStatus, stat.DiskStatus)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -83,8 +83,8 @@ func (db *DB) Add(stat ServerStatus) error {
 // Close closes the database and statement
 func (db *DB) Close() error {
 	defer func() {
-		db.stmt.Close()
-		db.sql.Close()
+		db.Stmt.Close()
+		db.Sql.Close()
 	}()
 
 	return nil
@@ -92,7 +92,7 @@ func (db *DB) Close() error {
 
 // PrintValues prints all rows from database
 func (db *DB) PrintValues() {
-	rows, err := db.sql.Query("SELECT * FROM serverStatus")
+	rows, err := db.Sql.Query("SELECT * FROM serverStatus")
 	if err != nil {
 		log.Fatal(err)
 	}
