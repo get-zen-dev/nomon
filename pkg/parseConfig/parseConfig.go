@@ -10,6 +10,7 @@ import (
 
 func ParseConfig(cfgFile string) (monitor.Args, error) {
 	file, err := ioutil.ReadFile(cfgFile)
+
 	if err != nil {
 		return monitor.Args{}, err
 	}
