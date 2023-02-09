@@ -1,0 +1,6 @@
+limit:     90
+duration:  300
+checktime: 30
+dbfile:    "serverStats.db"
+port:      "8080"
+

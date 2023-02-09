@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	f, err := config.ParsedConfig()
+	f, err := config.ParseConfig("config.yml")
 	if err != nil {
 		log.Println(err)
 		return
