@@ -8,7 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func ParseConfig(cfgFile string) (monitor.Args, error) {
+func Parse(cfgFile string) (monitor.Args, error) {
 	file, err := ioutil.ReadFile(cfgFile)
 
 	if err != nil {
