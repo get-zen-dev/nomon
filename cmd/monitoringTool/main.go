@@ -6,12 +6,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Setom29/CloudronMonitoring/pkg/flags"
+	"github.com/Setom29/CloudronMonitoring/pkg/config"
 	"github.com/Setom29/CloudronMonitoring/pkg/monitor"
 )
 
 func main() {
-	f, err := flags.ParseFlags()
+	f, err := config.ParsedConfig()
 	if err != nil {
 		log.Println(err)
 		return
