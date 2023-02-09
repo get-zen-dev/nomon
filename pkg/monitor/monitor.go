@@ -7,16 +7,23 @@ import (
 	"time"
 
 	"github.com/Setom29/CloudronMonitoring/pkg/dbConn"
-	"github.com/Setom29/CloudronMonitoring/pkg/flags"
 	"github.com/Setom29/CloudronMonitoring/pkg/getServerStats"
 )
 
 type Monitor struct {
 	DB *dbConn.DB
-	F  flags.Flags
+	F  Args
 }
 
-func NewMonitor(f flags.Flags) *Monitor {
+type Args struct {
+	Limit     float64 `yaml:"limit"`
+	Duration  int     `yaml:"duration"`
+	CheckTime int     `yaml:"checktime"`
+	DBFile    string  `yaml:"dbfile"`
+	Port      string  `yaml:"port"`
+}
+
+func NewMonitor(f Args) *Monitor {
 	db, err := dbConn.NewDB(f.DBFile)
 	if err != nil {
 		log.Fatal(err)
