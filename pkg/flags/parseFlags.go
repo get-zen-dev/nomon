@@ -15,9 +15,9 @@ type Flags struct {
 func ParseFlags() (Flags, error) {
 	f := Flags{}
 
-	limit := flag.Float64("p", 90, "max usage in %% of RAM, CPU and Disk")
+	limit := flag.Float64("p", 90, "max usage in % of RAM, CPU and Disk")
 	duration := flag.Int("t", 300, "time period for checking")
-	checkTime := flag.Int("c", 30, "check server status every _ seconds")
+	checkTime := flag.Int("c", 30, "check server status every X seconds")
 	dbFile := flag.String("f", "serverStats.db", "database filename")
 
 	flag.Parse()
