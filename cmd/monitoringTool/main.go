@@ -25,9 +25,10 @@ func main() {
 		syscall.SIGQUIT)
 
 	m := monitor.NewMonitor(f)
+	m.WG.Add(1)
 	go m.StartMonitoring(sigChan)
 
-	<-sigChan
+	m.WG.Wait()
 
 	// log.Println("Starting server on http://127.0.0.1:8080/")
 

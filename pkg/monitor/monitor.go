@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/Setom29/CloudronMonitoring/pkg/dbConn"
@@ -13,6 +14,7 @@ import (
 type Monitor struct {
 	DB *dbConn.DB
 	F  Args
+	WG *sync.WaitGroup
 }
 
 type Args struct {
@@ -31,12 +33,14 @@ func NewMonitor(f Args) *Monitor {
 	m := Monitor{
 		DB: db,
 		F:  f,
+		WG: &sync.WaitGroup{},
 	}
 	return &m
 }
 
 // StartMonitoring creates new db connection and pushes statistics to the database
 func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
+	monitor.WG.Done()
 	log.Println("Starting monitoring")
 	db, err := dbConn.NewDB(monitor.F.DBFile)
 	if err != nil {
