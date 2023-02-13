@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -41,10 +40,6 @@ func NewDB(dbFile string) (*DB, error) {
 		) VALUES (
 			?, ?, ?, ?
 		)`
-	err := os.Remove(dbFile)
-	if err != nil {
-		log.Println(err)
-	}
 	sqlDB, err := sql.Open("sqlite3", dbFile)
 	if err != nil {
 		return nil, err

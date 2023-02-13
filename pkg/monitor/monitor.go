@@ -40,7 +40,7 @@ func NewMonitor(f Args) *Monitor {
 
 // StartMonitoring creates new db connection and pushes statistics to the database
 func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
-	monitor.WG.Done()
+	defer monitor.WG.Done()
 	log.Println("Starting monitoring")
 	db, err := dbConn.NewDB(monitor.F.DBFile)
 	if err != nil {
