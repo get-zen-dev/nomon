@@ -21,8 +21,14 @@ func Parse(cfgFile string) (monitor.Args, error) {
 	if err != nil {
 		return monitor.Args{}, err
 	}
-	if args.Limit > 100 || args.Limit < 0 {
-		return monitor.Args{}, errors.New("wrong value for persentage")
+	if args.CPULimit > 100 || args.CPULimit < 0 {
+		return monitor.Args{}, errors.New("wrong value for CPU limit")
+	}
+	if args.RAMLimit > 100 || args.RAMLimit < 0 {
+		return monitor.Args{}, errors.New("wrong value for RAM limit")
+	}
+	if args.CPULimit > 100 || args.CPULimit < 0 {
+		return monitor.Args{}, errors.New("wrong value for Disk limit")
 	}
 	if args.Duration < 0 {
 		return monitor.Args{}, errors.New("wrong value for duration")
@@ -30,5 +36,6 @@ func Parse(cfgFile string) (monitor.Args, error) {
 	if args.CheckTime < 0 || args.CheckTime > args.Duration {
 		return monitor.Args{}, errors.New("wrong value for check time")
 	}
+	args.DBFile = "sqlite.db"
 	return args, nil
 }

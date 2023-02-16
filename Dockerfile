@@ -1,13 +1,19 @@
-FROM golang:latest-alpine
+FROM golang:1.17-alpine
 
-WORKDIR /app
+WORKDIR /
+
+RUN apk add --update yourPackageName
+
+RUN apt update && apt install -y install build-essential && rm -rf /var/lib/apt/lists/*
 
 COPY go.mod ./
 
+COPY go.mod go.sum ./
+
 RUN go mod download
 
-COPY . ./app
+COPY . .
 
-RUN go build -o ./app/cmd/monitoringTool/main.go
+RUN go build ./cmd/monitoringTool/main.go
 
-CMD [ "/StartMonitor" ]
+CMD [ "/gomonitor" ]

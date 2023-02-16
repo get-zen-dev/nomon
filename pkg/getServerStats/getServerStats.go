@@ -20,33 +20,33 @@ func GetCpu(duration int) float64 {
 }
 
 // GetMem returns Ram usage in percentage
-func GetMem() float64 {
+func GetMem() uint64 {
 	memInfo, err := mem.VirtualMemory()
 	if err != nil {
 		log.Println("Error getting mem.VirtualMemory(): ", err)
 		return 0
 	}
-	return memInfo.UsedPercent
+	return memInfo.Used
 }
 
 // GetSwap returns Swap usage in percentage
-func GetSwap() float64 {
+func GetSwap() uint64 {
 	swapInfo, err := mem.SwapMemory()
 	if err != nil {
 		log.Println("Error getting mem.SwapMemory():", err)
 		return 0
 	}
-	return swapInfo.UsedPercent
+	return swapInfo.Used
 }
 
 // GetDisk returns Disk usage in percentage
-func GetDisk() float64 {
+func GetDisk() uint64 {
 	diskInfo, err := disk.Usage("/")
 	if err != nil {
 		log.Println("Error getting Disk: ", err)
 		return 0
 	}
-	return diskInfo.UsedPercent
+	return diskInfo.Used
 }
 
 // GetTotalMetrics returns Ram, Swap, and Disk total values

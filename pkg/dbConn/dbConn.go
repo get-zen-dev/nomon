@@ -4,21 +4,23 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type ServerStatus struct {
-	Time       time.Time
-	CPUStatus  float64
-	RAMStatus  float64
-	DiskStatus float64
+	Time     time.Time
+	CPUUsed  float64
+	RAMUsed  uint64
+	DiskUsed uint64
 }
 
 type DB struct {
-	Sql  *sql.DB
-	Stmt *sql.Stmt
+	Sql   *sql.DB
+	Stmt  *sql.Stmt
+	Mutex *sync.Mutex
 }
 
 // NewDB creates new database
@@ -27,16 +29,16 @@ func NewDB(dbFile string) (*DB, error) {
 	schemaSQL := `
 		CREATE TABLE IF NOT EXISTS serverStatus (
 			time TIMESTAMP,
-			cpustatus FLOAT,
-			ramstatus FLOAT,
-			diskstatus FLOAT
+			cpuused FLOAT,
+			ramused INTEGER,
+			diskused INTEGER
 		);
 
 		CREATE INDEX IF NOT EXISTS status_time ON serverStatus(time);
 		`
 	insertSQL := `
 		INSERT INTO serverStatus (
-			time, cpustatus, ramstatus, diskstatus
+			time, cpuused, ramused, diskused
 		) VALUES (
 			?, ?, ?, ?
 		)`
@@ -53,20 +55,23 @@ func NewDB(dbFile string) (*DB, error) {
 		return nil, err
 	}
 	db := DB{
-		Sql:  sqlDB,
-		Stmt: stmt,
+		Sql:   sqlDB,
+		Stmt:  stmt,
+		Mutex: &sync.Mutex{},
 	}
 	return &db, nil
 }
 
 // Add adds row to the database
 func (db *DB) Add(stat ServerStatus) error {
+	db.Mutex.Lock()
+	defer db.Mutex.Unlock()
 	tx, err := db.Sql.Begin()
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Stmt(db.Stmt).Exec(stat.Time, stat.CPUStatus, stat.RAMStatus, stat.DiskStatus)
+	_, err = tx.Stmt(db.Stmt).Exec(stat.Time, stat.CPUUsed, stat.RAMUsed, stat.DiskUsed)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -96,7 +101,7 @@ func (db *DB) PrintValues() {
 	stats := []ServerStatus{}
 	for rows.Next() {
 		stat := ServerStatus{}
-		err := rows.Scan(&stat.Time, &stat.CPUStatus, &stat.RAMStatus, &stat.DiskStatus)
+		err := rows.Scan(&stat.Time, &stat.CPUUsed, &stat.RAMUsed, &stat.DiskUsed)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -104,6 +109,6 @@ func (db *DB) PrintValues() {
 		stats = append(stats, stat)
 	}
 	for _, stat := range stats {
-		fmt.Println(stat.Time, stat.CPUStatus, stat.RAMStatus, stat.DiskStatus)
+		fmt.Println(stat.Time, stat.CPUUsed, stat.RAMUsed, stat.DiskUsed)
 	}
 }

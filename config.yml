@@ -1,6 +1,5 @@
-limit:     90
-duration:  300
-checktime: 30
-dbfile:    "serverStats.db"
-port:      "8080"
-
+cpulimit: 20
+ramlimit: 20
+disklimit: 20
+duration:  30  # time between alert checks
+checktime: 10  # time between intermediate status checks (at least 5 seconds)
