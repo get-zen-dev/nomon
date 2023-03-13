@@ -1,19 +1,18 @@
-FROM golang:1.17-alpine
 
-WORKDIR /
-
-RUN apk add --update yourPackageName
-
-RUN apt update && apt install -y install build-essential && rm -rf /var/lib/apt/lists/*
-
-COPY go.mod ./
-
-COPY go.mod go.sum ./
-
-RUN go mod download
-
+FROM golang:alpine
+ENV GO111MODULE=on
+ENV GOPROXY=https://goproxy.cn
+# for sqlite3
+RUN apk add --no-cache --virtual .build-deps \
+    ca-certificates \
+    gcc \
+    g++
+WORKDIR /go/src/sqlite3_alpine
 COPY . .
+RUN go env && go build ./cmd/monitoringTool/main.go
 
-RUN go build ./cmd/monitoringTool/main.go
-
-CMD [ "/gomonitor" ]
+FROM alpine:latest
+WORKDIR /go/src/sqlite3_alpine
+COPY --from=0 /go/src/sqlite3_alpine ./
+# VOLUME /go/src/sqlite3_alpine/data
+ENTRYPOINT ./main
