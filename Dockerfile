@@ -1,7 +1,5 @@
 
 FROM golang:alpine
-ENV GO111MODULE=on
-ENV GOPROXY=https://goproxy.cn
 # for sqlite3
 RUN apk add --no-cache --virtual .build-deps \
     ca-certificates \
