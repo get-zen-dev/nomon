@@ -1,0 +1,10 @@
+{
+    "title": "Monitor",
+    "author": "Sergei Tolstov",
+    "description": "Monitoring tool for Cloudron server",
+    "version": "0.0.1",
+    "healthCheckPath": "/",
+    "httpPort": 8000,
+    "manifestVersion": 2,
+    "contactEmail": "sergeymtolstov35@gmail.com"
+  }
