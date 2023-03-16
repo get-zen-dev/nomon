@@ -8,9 +8,10 @@ RUN apk add --no-cache --virtual .build-deps \
 WORKDIR /go/src/sqlite3_alpine
 COPY . .
 RUN go env && go build ./cmd/monitoringTool/main.go
+ENTRYPOINT ./main
 
 FROM alpine:latest
 WORKDIR /go/src/sqlite3_alpine
 COPY --from=0 /go/src/sqlite3_alpine ./
-# VOLUME /go/src/sqlite3_alpine/data
+VOLUME /go/src/sqlite3_alpine/data
 ENTRYPOINT ./main
