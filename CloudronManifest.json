@@ -1,10 +1,19 @@
 {
-    "title": "Monitor",
-    "author": "Sergei Tolstov",
-    "description": "Monitoring tool for Cloudron server",
-    "version": "0.0.1",
-    "healthCheckPath": "/",
-    "httpPort": 8000,
-    "manifestVersion": 2,
-    "contactEmail": "sergeymtolstov35@gmail.com"
-  }
+  "id": "mymonitor.srg.potemkin.co",
+  "title": "mymonitor",
+  "author": "Sergei Tolstov <sergeymtolstov35@gmail.com>",
+  "description": "Monitoring app",
+  "tagline": "A great beginning",
+  "version": "0.0.1",
+  "healthCheckPath": "/",
+  "httpPort": 8000,
+  "addons": {
+    "localstorage": {}
+  },
+  "manifestVersion": 2,
+  "website": "https://www.example.com/",
+  "contactEmail": "support@clourdon.io",
+  "icon": "file://icon.png",
+  "tags": [ "monitoring" ],
+  "mediaLinks": [ "https://images.rapgenius.com/fd0175ef780e2feefb30055be9f2e022.520x343x1.jpg" ]
+}
