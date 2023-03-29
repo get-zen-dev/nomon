@@ -8,10 +8,10 @@ RUN apk add --no-cache --virtual .build-deps \
 WORKDIR /go/src/mymonitor
 COPY . .
 RUN go env && go build ./cmd/monitoringTool/main.go
-ENTRYPOINT ./main
+
 
 FROM alpine:latest
 WORKDIR /go/src/mymonitor
 COPY --from=0 /go/src/mymonitor ./
 VOLUME /go/src/mymonitor/data
-ENTRYPOINT ./main
+CMD ["./main"] 
