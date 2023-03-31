@@ -30,7 +30,7 @@ type Args struct {
 }
 
 func NewMonitor(f Args) *Monitor {
-	db, err := dbConn.NewDB("sqlite.db")
+	db, err := dbConn.NewDB("./data/sqlite.db")
 	if err != nil {
 		log.Fatal(err)
 	}
