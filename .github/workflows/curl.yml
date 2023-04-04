@@ -10,8 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Make HTTP Request
-      run: curl -X POST \
-      -H "Authorization: Bearer ${{WEBHOOK_TOKEN}}" \
-      -H "Content-Type: application/json" \
-      -d '{"body": "hello matrix", "msgtype": "m.text"}' \
-      '${{WEBHOOK_URL}}'
+      run: curl -X POST -H "Authorization: Bearer ${{WEBHOOK_TOKEN}}" -H "Content-Type: application/json" -d '{"body": "hello matrix", "msgtype": "m.text"}' '${{WEBHOOK_URL}}'
