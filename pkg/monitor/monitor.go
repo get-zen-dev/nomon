@@ -53,7 +53,6 @@ func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 	db, err := dbConn.NewDB(monitor.F.DBFile)
 
 	go monitor.CheckStatus()
-	go monitor.ClearDatabase()
 
 	if err != nil {
 		log.Fatal(err)
@@ -64,6 +63,7 @@ func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 			db.Close()
 			return
 		default:
+
 			stat := dbConn.ServerStatus{
 				CPUUsed:  getServerStats.GetCpu(monitor.F.CheckTime),
 				RAMUsed:  getServerStats.GetMem(),
@@ -76,12 +76,13 @@ func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 			if err != nil {
 				log.Println(err)
 			}
+			go monitor.ClearDatabase() // ?
 		}
 	}
 }
 
 // CheckStatus reads data from database and alerts if metric's usage limit exceeded
-func (monitor *Monitor) CheckStatus() {
+func (monitor *Monitor) CheckStatus() { //Analize
 	for {
 		time.Sleep(time.Duration(monitor.F.Duration) * time.Second)
 		rows, err := monitor.DB.Sql.Query(fmt.Sprintf("SELECT * FROM serverStatus WHERE time >= Datetime('now', '-%d seconds', 'localtime');", monitor.F.Duration))
@@ -118,11 +119,10 @@ func (monitor *Monitor) CheckStatus() {
 }
 
 func (monitor *Monitor) ClearDatabase() {
-	time.Sleep(time.Hour)
+	time.Sleep(time.Hour) // !!!!!!!!!!!
 	if currTime := time.Now(); currTime.Hour() < 3 && currTime.Hour() > 2 {
 		monitor.DB.Mutex.Lock()
 		defer monitor.DB.Mutex.Unlock()
 		monitor.DB.Sql.Exec(fmt.Sprintf("DELETE FROM serverStatus WHERE time < Datetime('now', '-%d seconds', 'localtime');", monitor.F.Duration))
-
 	}
 }
