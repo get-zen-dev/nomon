@@ -3,6 +3,7 @@ package parseConfig
 import (
 	"errors"
 	"io/ioutil"
+	"time"
 
 	"github.com/Setom29/CloudronMonitoring/pkg/monitor"
 	"gopkg.in/yaml.v3"
@@ -33,9 +34,12 @@ func Parse(cfgFile string) (monitor.Args, error) {
 	if args.Duration < 0 {
 		return monitor.Args{}, errors.New("wrong value for duration")
 	}
-	if args.CheckTime < 0 || args.CheckTime > args.Duration {
-		return monitor.Args{}, errors.New("wrong value for check time")
+	// Parse time value
+	_, err = time.Parse("15:04:05", args.DBClearTime)
+	if err != nil {
+		return monitor.Args{}, errors.New("wrong value for db_check_time")
 	}
+	args.CheckTime = 5
 	args.DBFile = "sqlite.db"
 	return args, nil
 }

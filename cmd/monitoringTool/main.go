@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"html/template"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,19 +21,40 @@ func main() {
 	}
 
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan,
-		syscall.SIGHUP,
-		syscall.SIGINT,
-		syscall.SIGTERM,
-		syscall.SIGQUIT)
+	signal.Notify(sigChan, syscall.SIGINT)
 
 	m := monitor.NewMonitor(f)
-	m.WG.Add(1)
 	go m.StartMonitoring(sigChan)
-	m.WG.Wait()
 
-	// log.Println("Starting server on http://127.0.0.1:8080/")
+	log.Printf("Starting server on http://127.0.0.1:%d/\n", f.PORT)
 
-	// r := newRouter()
-	// log.Fatal(http.ListenAndServe(":8080", r))
+	http.HandleFunc("/", makeIndexHandler(m))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", f.PORT), nil))
+}
+
+type IndexData struct {
+	Message   string
+	LastCheck string
+}
+
+func makeIndexHandler(m *monitor.Monitor) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data := IndexData{
+			Message:   "Last check:",
+			LastCheck: m.LastCheck.Format("2006-01-02 15:04:05 UTC"),
+		}
+		// parse the HTML template
+		tmpl, err := template.ParseFiles("index.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// execute the HTML template with the struct instance
+		err = tmpl.Execute(w, data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
 }

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"sync"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -18,9 +17,8 @@ type ServerStatus struct {
 }
 
 type DB struct {
-	Sql   *sql.DB
-	Stmt  *sql.Stmt
-	Mutex *sync.Mutex
+	Sql  *sql.DB
+	Stmt *sql.Stmt
 }
 
 // NewDB creates new database
@@ -55,17 +53,14 @@ func NewDB(dbFile string) (*DB, error) {
 		return nil, err
 	}
 	db := DB{
-		Sql:   sqlDB,
-		Stmt:  stmt,
-		Mutex: &sync.Mutex{},
+		Sql:  sqlDB,
+		Stmt: stmt,
 	}
 	return &db, nil
 }
 
 // Add adds row to the database
 func (db *DB) Add(stat ServerStatus) error {
-	db.Mutex.Lock()
-	defer db.Mutex.Unlock()
 	tx, err := db.Sql.Begin()
 	if err != nil {
 		return err

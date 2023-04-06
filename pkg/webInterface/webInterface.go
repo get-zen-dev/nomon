@@ -1,50 +1,38 @@
 package webInterface
 
 import (
-	"fmt"
-	"html/template"
-	"log"
 	"net/http"
-
-	"github.com/gorilla/mux"
+	"text/template"
 )
 
-func newRouter() *mux.Router {
-	r := mux.NewRouter()
-	r.HandleFunc("/", indexHandler).Methods("GET")
-	staticFileDirectory := http.Dir("./")
-	staticFileHandler := http.StripPrefix("./", http.FileServer(staticFileDirectory))
-	r.PathPrefix("./").Handler(staticFileHandler).Methods("GET")
-	r.HandleFunc("/breakpoints", createBreakpointsHandler).Methods("POST")
-
-	return r
+type IndexData struct {
+	Message   string
+	LastCheck string
 }
 
-var tpl = template.Must(template.ParseFiles("./index.html"))
+func IndexHandler(message, lastCheck string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// define a struct that contains the values to be passed to the HTML template
+		data := struct {
+			Message   string
+			LastCheck string
+		}{
+			Message:   message,
+			LastCheck: lastCheck,
+		}
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	tpl.Execute(w, nil)
-}
+		// parse the HTML template
+		tmpl, err := template.ParseFiles("./index.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-type Breakpoints struct {
-	X string `json:"x"`
-	Y string `json:"y"`
-}
-
-func createBreakpointsHandler(w http.ResponseWriter, r *http.Request) {
-	b := Breakpoints{}
-
-	err := r.ParseForm()
-
-	if err != nil {
-		fmt.Println(fmt.Errorf("Error: %v", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		// execute the HTML template with the struct instance
+		err = tmpl.Execute(w, data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
-
-	b.X = r.Form.Get("x")
-	b.Y = r.Form.Get("y")
-
-	log.Println(b)
-	http.Redirect(w, r, "/", http.StatusFound)
 }
