@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	f, err := parseConfig.Parse("./data/config.yml")
+	f, err := parseConfig.Parse("./cfg/config.yml")
 	if err != nil {
 		log.Println(err)
 		return
