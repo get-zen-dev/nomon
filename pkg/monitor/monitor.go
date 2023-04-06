@@ -33,7 +33,7 @@ type Args struct {
 }
 
 func NewMonitor(f Args) *Monitor {
-	db, err := dbConn.NewDB("./data/sqlite.db")
+	db, err := dbConn.NewDB(f.DBFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,15 +53,11 @@ func NewMonitor(f Args) *Monitor {
 // StartMonitoring creates new db connection and pushes statistics to the database
 func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 	log.Println("Starting monitoring")
-	db, err := dbConn.NewDB(monitor.F.DBFile)
 
-	if err != nil {
-		log.Fatal(err)
-	}
 	for {
 		select {
 		case <-ch:
-			db.Close()
+			monitor.DB.Close()
 			os.Exit(0)
 		default:
 
@@ -70,10 +66,7 @@ func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 				RAMUsed:  getServerStats.GetMem(),
 				DiskUsed: getServerStats.GetDisk(),
 				Time:     time.Now()}
-			if err != nil {
-				log.Println(err)
-			}
-			err = monitor.DB.Add(stat)
+			err := monitor.DB.Add(stat)
 			if err != nil {
 				log.Println(err)
 			}

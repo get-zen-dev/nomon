@@ -40,6 +40,6 @@ func Parse(cfgFile string) (monitor.Args, error) {
 		return monitor.Args{}, errors.New("wrong value for db_check_time")
 	}
 	args.CheckTime = 5
-	args.DBFile = "sqlite.db"
+	args.DBFile = "./data/sqlite.db"
 	return args, nil
 }
