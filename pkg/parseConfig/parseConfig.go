@@ -37,7 +37,7 @@ func Parse(cfgFile string) (monitor.Args, error) {
 	// Parse time value
 	_, err = time.Parse("15:04:05", args.DBClearTime)
 	if err != nil {
-		return monitor.Args{}, errors.New("wrong value for db_check_time")
+		return monitor.Args{}, errors.New("wrong value for db_clear_time")
 	}
 	args.CheckTime = 5
 	args.DBFile = "./data/sqlite.db"

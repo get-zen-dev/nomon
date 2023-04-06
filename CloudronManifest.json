@@ -1,7 +1,7 @@
 {
   "id": "mymonitor.srg.potemkin.co",
   "title": "mymonitor",
-  "author": "Sergei Tolstov <sergeymtolstov35@gmail.com>",
+  "author": "Sergei Tolstov",
   "description": "Monitoring app",
   "tagline": "A great beginning",
   "version": "0.0.1",
@@ -11,7 +11,7 @@
     "localstorage": {}
   },
   "manifestVersion": 2,
-  "website": "https://www.example.com/",
+  "website": "https://github.com/Setom29/CloudronMonitoring",
   "contactEmail": "support@clourdon.io",
   "icon": "file://icon.png",
   "tags": [ "monitoring" ],
