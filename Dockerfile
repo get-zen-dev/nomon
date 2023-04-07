@@ -24,8 +24,6 @@ WORKDIR /app
 # Copy only the necessary files from the build stage
 COPY --from=build /app .
 
-RUN ls -al
-
 # Expose port 8000
 EXPOSE 8000
 
