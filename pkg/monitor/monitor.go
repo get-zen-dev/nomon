@@ -56,7 +56,6 @@ func NewMonitor(f Args, r report.Report) *Monitor {
 // StartMonitoring creates new db connection and pushes statistics to the database
 func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 	log.Println("Start monitoring")
-	log.Println(monitor.R)
 
 	for {
 		select {
@@ -120,7 +119,7 @@ func (monitor *Monitor) Analyse() {
 			float64(monitor.RAMTotal)/math.Pow(1024, 3))
 	}
 	if diskStatus := diskUsedCumSum / float64(counter); diskStatus/float64(monitor.DiskTotal)*100 > monitor.F.DiskLimit {
-		msg += fmt.Sprintf("Disk usage limit exceeded: %f%% (%f GB /%f GB)\n",
+		msg += fmt.Sprintf("Disk usage limit exceeded: %f%% (%f GB /%f GB)",
 			diskStatus/float64(monitor.DiskTotal)*100,
 			diskStatus/math.Pow(1024, 3),
 			float64(monitor.DiskTotal)/math.Pow(1024, 3))

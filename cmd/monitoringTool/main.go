@@ -26,8 +26,6 @@ func main() {
 	m := monitor.NewMonitor(f, r)
 	go m.StartMonitoring(sigChan)
 
-	log.Printf("Starting server on http://127.0.0.1:%d/\n", f.Port)
-
 	http.HandleFunc("/", makeIndexHandler(m))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", f.Port), nil))
 }
