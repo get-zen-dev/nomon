@@ -1,6 +1,0 @@
-cpulimit: 20
-ramlimit: 20
-disklimit: 20
-duration:  30  # time between alert checks (at least 30 seconds)
-port: 8000
-db_clear_time: "1:00:00" # database clearing start time (UTC)

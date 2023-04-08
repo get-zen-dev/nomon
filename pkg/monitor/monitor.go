@@ -10,11 +10,13 @@ import (
 
 	"github.com/Setom29/CloudronMonitoring/pkg/dbConn"
 	"github.com/Setom29/CloudronMonitoring/pkg/getServerStats"
+	"github.com/Setom29/CloudronMonitoring/pkg/report"
 )
 
 type Monitor struct {
 	DB        *dbConn.DB
-	F         Args
+	F         *Args
+	R         *report.Report
 	WG        *sync.WaitGroup
 	RAMTotal  uint64
 	DiskTotal uint64
@@ -22,17 +24,17 @@ type Monitor struct {
 }
 
 type Args struct {
-	CPULimit    float64 `yaml:"cpulimit"`
-	RAMLimit    float64 `yaml:"ramlimit"`
-	DiskLimit   float64 `yaml:"disklimit"`
+	CPULimit    float64 `yaml:"cpu_limit"`
+	RAMLimit    float64 `yaml:"ram_limit"`
+	DiskLimit   float64 `yaml:"disk_limit"`
 	Duration    int     `yaml:"duration"`
-	CheckTime   int     // `yaml:"checktime"`
-	PORT        int     `yaml:"port"`
+	Port        int     `yaml:"port"`
 	DBClearTime string  `yaml:"db_clear_time"`
+	CheckTime   int
 	DBFile      string
 }
 
-func NewMonitor(f Args) *Monitor {
+func NewMonitor(f *Args, r *report.Report) *Monitor {
 	db, err := dbConn.NewDB(f.DBFile)
 	if err != nil {
 		log.Fatal(err)
@@ -89,6 +91,7 @@ func (monitor *Monitor) Analyse() {
 	}
 	defer rows.Close()
 
+	// cumulative sum for metrics
 	counter := 0
 	cpuUsedCumSum, ramUsedCumSum, diskUsedCumSum := 0.0, 0.0, 0.0
 	for rows.Next() {
@@ -103,6 +106,7 @@ func (monitor *Monitor) Analyse() {
 		ramUsedCumSum += float64(stat.RAMUsed)
 		diskUsedCumSum += float64(stat.DiskUsed)
 	}
+	// alert check
 	if cpuStatus := cpuUsedCumSum / float64(counter); cpuStatus > monitor.F.CPULimit {
 		log.Printf("CPU usage limit exceeded: %f%%\n", cpuStatus)
 	}

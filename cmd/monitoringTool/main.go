@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	f, err := parseConfig.Parse("./data/config.yml")
+	f, r, err := parseConfig.Parse("./data/config.yml")
 	if err != nil {
 		log.Println(err)
 		return
@@ -23,13 +23,13 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)
 
-	m := monitor.NewMonitor(f)
+	m := monitor.NewMonitor(f, r)
 	go m.StartMonitoring(sigChan)
 
-	log.Printf("Starting server on http://127.0.0.1:%d/\n", f.PORT)
+	log.Printf("Starting server on http://127.0.0.1:%d/\n", f.Port)
 
 	http.HandleFunc("/", makeIndexHandler(m))
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", f.PORT), nil))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", f.Port), nil))
 }
 
 type IndexData struct {
