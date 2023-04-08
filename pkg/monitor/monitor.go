@@ -15,8 +15,8 @@ import (
 
 type Monitor struct {
 	DB        *dbConn.DB
-	F         *Args
-	R         *report.Report
+	F         Args
+	R         report.Report
 	WG        *sync.WaitGroup
 	RAMTotal  uint64
 	DiskTotal uint64
@@ -34,7 +34,7 @@ type Args struct {
 	DBFile      string
 }
 
-func NewMonitor(f *Args, r *report.Report) *Monitor {
+func NewMonitor(f Args, r report.Report) *Monitor {
 	db, err := dbConn.NewDB(f.DBFile)
 	if err != nil {
 		log.Fatal(err)
@@ -43,6 +43,7 @@ func NewMonitor(f *Args, r *report.Report) *Monitor {
 	m := Monitor{
 		DB: db,
 		F:  f,
+		R:  r,
 		WG: &sync.WaitGroup{},
 
 		RAMTotal:  ramTotal,
@@ -54,7 +55,8 @@ func NewMonitor(f *Args, r *report.Report) *Monitor {
 
 // StartMonitoring creates new db connection and pushes statistics to the database
 func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
-	log.Println("Starting monitoring")
+	log.Println("Start monitoring")
+	log.Println(monitor.R)
 
 	for {
 		select {
@@ -107,20 +109,25 @@ func (monitor *Monitor) Analyse() {
 		diskUsedCumSum += float64(stat.DiskUsed)
 	}
 	// alert check
+	msg := ""
 	if cpuStatus := cpuUsedCumSum / float64(counter); cpuStatus > monitor.F.CPULimit {
-		log.Printf("CPU usage limit exceeded: %f%%\n", cpuStatus)
+		msg += fmt.Sprintf("CPU usage limit exceeded: %f%%\n", cpuStatus)
 	}
 	if ramStatus := ramUsedCumSum / float64(counter); ramStatus/float64(monitor.RAMTotal)*100 > monitor.F.RAMLimit {
-		log.Printf("RAM usage limit exceeded: %f%% (%f GB /%f GB)\n",
+		msg += fmt.Sprintf("RAM usage limit exceeded: %f%% (%f GB /%f GB)\n",
 			ramStatus/float64(monitor.RAMTotal)*100,
 			ramStatus/math.Pow(1024, 3),
 			float64(monitor.RAMTotal)/math.Pow(1024, 3))
 	}
 	if diskStatus := diskUsedCumSum / float64(counter); diskStatus/float64(monitor.DiskTotal)*100 > monitor.F.DiskLimit {
-		log.Printf("Disk usage limit exceeded: %f%% (%f GB /%f GB)\n",
+		msg += fmt.Sprintf("Disk usage limit exceeded: %f%% (%f GB /%f GB)\n",
 			diskStatus/float64(monitor.DiskTotal)*100,
 			diskStatus/math.Pow(1024, 3),
 			float64(monitor.DiskTotal)/math.Pow(1024, 3))
+	}
+	if msg != "" {
+		log.Println(msg)
+		monitor.R.SendMessage(msg)
 	}
 
 }
@@ -128,8 +135,8 @@ func (monitor *Monitor) Analyse() {
 func (monitor *Monitor) ClearDatabase() {
 	t, _ := time.Parse("15:04:05", monitor.F.DBClearTime)
 	if currTime := time.Now().UTC(); t.UTC().After(currTime) && t.UTC().Before(currTime.Add(time.Hour)) {
-		log.Println("start clearing outdated values")
+		log.Println("Start clearing outdated values")
 		monitor.DB.Sql.Exec(fmt.Sprintf("DELETE FROM serverStatus WHERE time < Datetime('now', '-%d seconds', 'localtime');", monitor.F.Duration))
-		log.Println("end clearing outdated values")
+		log.Println("End clearing outdated values")
 	}
 }

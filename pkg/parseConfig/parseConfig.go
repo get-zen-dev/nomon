@@ -3,7 +3,6 @@ package parseConfig
 import (
 	"errors"
 	"io/ioutil"
-	"log"
 	"time"
 
 	"github.com/Setom29/CloudronMonitoring/pkg/monitor"
@@ -16,29 +15,29 @@ type Config struct {
 	Report report.Report `yaml:"report"`
 }
 
-func Parse(cfgFile string) (*monitor.Args, *report.Report, error) {
+func Parse(cfgFile string) (monitor.Args, report.Report, error) {
 	file, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
-		return nil, nil, err
+		return monitor.Args{}, report.Report{}, err
 	}
 
 	var cfg Config
 
 	err = yaml.Unmarshal(file, &cfg)
 	if err != nil {
-		return nil, nil, err
+		return monitor.Args{}, report.Report{}, err
 	}
-	log.Println(cfg)
+
 	if err = validateArgs(cfg); err != nil {
-		return nil, nil, err
+		return monitor.Args{}, report.Report{}, err
 	}
 
 	cfg.Report.Message = ""
 	cfg.Report.URL = ""
 	cfg.Args.CheckTime = 5
 	cfg.Args.DBFile = "./data/sqlite.db"
-	return &cfg.Args,
-		&cfg.Report, nil
+	return cfg.Args,
+		cfg.Report, nil
 }
 
 func validateArgs(cfg Config) error {

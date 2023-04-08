@@ -2,6 +2,7 @@ package report
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/containrrr/shoutrrr"
 )
@@ -15,7 +16,8 @@ type Report struct {
 	Message           string
 }
 
-func (r *Report) SendMessage() {
+func (r *Report) SendMessage(msg string) {
+	r.Message = msg
 	r.MakeURL()
 	r.Report()
 
@@ -23,10 +25,13 @@ func (r *Report) SendMessage() {
 
 func (r *Report) MakeURL() {
 	if r.Service == "matrix" {
-		r.URL = fmt.Sprintf("matrix://%s@%s/?rooms=%s", r.MatrixAccessToken, r.MatrixHostServer, r.MatrixRoomID)
+		r.URL = fmt.Sprintf("matrix://:%s@%s/?rooms=%s", r.MatrixAccessToken, r.MatrixHostServer, r.MatrixRoomID)
 	}
 }
 
 func (r *Report) Report() {
-	shoutrrr.Send(r.URL, r.Message)
+	if err := shoutrrr.Send(r.URL, r.Message); err != nil {
+		log.Println("Error sending report, ", err)
+	}
+
 }
