@@ -25,7 +25,6 @@ func main() {
 
 	m := monitor.NewMonitor(f, r)
 	go m.StartMonitoring(sigChan)
-
 	http.HandleFunc("/", makeIndexHandler(m))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", f.Port), nil))
 }

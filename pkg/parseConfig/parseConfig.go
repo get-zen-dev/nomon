@@ -3,7 +3,6 @@ package parseConfig
 import (
 	"errors"
 	"io/ioutil"
-	"time"
 
 	"github.com/Setom29/CloudronMonitoring/pkg/monitor"
 	"github.com/Setom29/CloudronMonitoring/pkg/report"
@@ -55,8 +54,7 @@ func validateArgs(cfg Config) error {
 		return errors.New("wrong value for duration")
 	}
 	// Parse time value
-	_, err := time.Parse("15:04:05", cfg.Args.DBClearTime)
-	if err != nil {
+	if cfg.Args.DBClearTime > 23 || cfg.Args.DBClearTime < 0 {
 		return errors.New("wrong value for db_clear_time")
 	}
 	return nil
