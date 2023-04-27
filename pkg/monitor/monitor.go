@@ -70,7 +70,6 @@ func NewMonitor(args Args, r report.Report) *Monitor {
 // StartMonitoring creates new db connection and pushes statistics to the database
 func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 	log.Println("Start monitoring")
-
 	for {
 		select {
 		case <-ch:
@@ -134,41 +133,47 @@ func (monitor *Monitor) Analyse() {
 // AnilizeStatistics gets statistics values, checks for alerts and returns message for reporting
 func (monitor *Monitor) AnilizeStatistics(cpuStat, ramStat, diskStat float64) string {
 	msgArr := make([]string, 0)
+	msgArr = append(msgArr, fmt.Sprintf("CPU: %f%%, RAM: %f%%, Disk: %f%%", cpuStat, ramStat/float64(monitor.RAMTotal)*100, diskStat/float64(monitor.DiskTotal)*100))
+	// CPU
 	if cpuStat > monitor.Args.CPULimit {
+		monitor.Counters.CPUCounter++
 		if monitor.Counters.CPUCounter >= monitor.Args.CPUCycles {
 			msgArr = append(msgArr, fmt.Sprintf("CPU usage limit exceeded: %f%%", cpuStat))
 		}
-		monitor.Counters.CPUCounter++
 	} else {
-		if monitor.Counters.CPUCounter > monitor.Args.CPUCycles {
+		if monitor.Counters.CPUCounter >= monitor.Args.CPUCycles {
 			msgArr = append(msgArr, "CPU usage within normal limits.")
 		}
 		monitor.Counters.CPUCounter = 0
 	}
+
+	// RAM
 	if ramStat/float64(monitor.RAMTotal)*100 > monitor.Args.RAMLimit {
+		monitor.Counters.RAMCounter++
 		if monitor.Counters.RAMCounter >= monitor.Args.RAMCycles {
 			msgArr = append(msgArr, fmt.Sprintf("RAM usage limit exceeded: %f%% (%f GB /%f GB)",
 				ramStat/float64(monitor.RAMTotal)*100,
 				ramStat/math.Pow(1024, 3),
 				float64(monitor.RAMTotal)/math.Pow(1024, 3)))
 		}
-		monitor.Counters.RAMCounter++
 	} else {
-		if monitor.Counters.RAMCounter > monitor.Args.RAMCycles {
+		if monitor.Counters.RAMCounter >= monitor.Args.RAMCycles {
 			msgArr = append(msgArr, "RAM usage within normal limits.")
 		}
-		monitor.Counters.CPUCounter = 0
+		monitor.Counters.RAMCounter = 0
 	}
+
+	// Disk
 	if diskStat/float64(monitor.DiskTotal)*100 > monitor.Args.DiskLimit {
+		monitor.Counters.DiskCounter++
 		if monitor.Counters.DiskCounter >= monitor.Args.DiskCycles {
 			msgArr = append(msgArr, fmt.Sprintf("Disk usage limit exceeded: %f%% (%f GB /%f GB)",
 				diskStat/float64(monitor.DiskTotal)*100,
 				diskStat/math.Pow(1024, 3),
 				float64(monitor.DiskTotal)/math.Pow(1024, 3)))
 		}
-		monitor.Counters.DiskCounter++
 	} else {
-		if monitor.Counters.RAMCounter > monitor.Args.RAMCycles {
+		if monitor.Counters.DiskCounter >= monitor.Args.DiskCycles {
 			msgArr = append(msgArr, "Disk usage within normal limits.")
 		}
 		monitor.Counters.DiskCounter = 0
