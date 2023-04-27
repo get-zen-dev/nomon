@@ -33,5 +33,4 @@ func (r *Report) Report() {
 	if err := shoutrrr.Send(r.URL, r.Message); err != nil {
 		log.Println("Error sending report, ", err)
 	}
-
 }
