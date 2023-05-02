@@ -64,7 +64,7 @@ func NewMonitor(args Args, r report.Report) *Monitor {
 		RAMTotal:      ramTotal,
 		DiskTotal:     diskTotal,
 		LastCheck:     t,
-		LastClearTime: t,
+		LastClearTime: t.AddDate(0, 0, -1),
 	}
 	log.Debug("New monitor created")
 	return &m
@@ -81,13 +81,13 @@ func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 			monitor.DB.Close()
 			os.Exit(0)
 		default:
-			log.Debug("Monitoring iteration")
 			stat := dbConn.ServerStatus{
 				CPUUsed:  getServerStats.GetCpu(monitor.Args.CheckTime),
 				RAMUsed:  getServerStats.GetMem(),
 				DiskUsed: getServerStats.GetDisk(),
 				Time:     time.Now(),
 			}
+			log.Debug("Getting server status: ", stat)
 			err := monitor.DB.Add(stat)
 			if err != nil {
 				log.Error("Error adding stats: ", err)
@@ -201,5 +201,7 @@ func (monitor *Monitor) ClearDatabase() {
 		if err != nil {
 			log.Error("Error clearing db: ", err)
 		}
+		monitor.LastClearTime = monitor.LastClearTime.AddDate(0, 0, 1)
+		log.Debug("Database clear time: ", monitor.LastClearTime)
 	}
 }

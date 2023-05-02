@@ -21,7 +21,6 @@ func (r *Report) SendMessage(msg string) {
 	r.Message = msg
 	r.MakeURL()
 	r.Report()
-	log.Debug("Message sent: ", r.Message)
 
 }
 
@@ -37,4 +36,5 @@ func (r *Report) Report() {
 	if err := shoutrrr.Send(r.URL, r.Message); err != nil {
 		log.Error("Error sending report, ", err)
 	}
+	log.Trace("Message sent")
 }

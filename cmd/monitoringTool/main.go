@@ -34,6 +34,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT)
 
 	m := monitor.NewMonitor(args, report)
+	log.Debug(m.Args)
 	go m.StartMonitoring(sigChan)
 	http.HandleFunc("/", webInterface.MakeIndexHandler(m))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", m.Args.Port), nil))
