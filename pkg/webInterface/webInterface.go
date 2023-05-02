@@ -3,27 +3,30 @@ package webInterface
 import (
 	"net/http"
 	"text/template"
+	"time"
+
+	"github.com/Setom29/CloudronMonitoring/pkg/monitor"
+	log "github.com/sirupsen/logrus"
 )
 
 type IndexData struct {
 	Message   string
-	LastCheck string
+	LastCheck time.Time
 }
 
-func IndexHandler(message, lastCheck string) http.HandlerFunc {
+func MakeIndexHandler(m *monitor.Monitor) http.HandlerFunc {
+	log.Trace("webInterface:MakeIndexHandler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		// define a struct that contains the values to be passed to the HTML template
-		data := struct {
-			Message   string
-			LastCheck string
-		}{
-			Message:   message,
-			LastCheck: lastCheck,
+		data := IndexData{
+			Message:   "Last check",
+			LastCheck: m.LastCheck,
 		}
 
 		// parse the HTML template
 		tmpl, err := template.ParseFiles("./index.html")
 		if err != nil {
+			log.Error("Error creating template:", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -31,8 +34,11 @@ func IndexHandler(message, lastCheck string) http.HandlerFunc {
 		// execute the HTML template with the struct instance
 		err = tmpl.Execute(w, data)
 		if err != nil {
+			log.Error("Error applying template:", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		log.Debug("http.HandlerFunc created.")
 	}
+
 }

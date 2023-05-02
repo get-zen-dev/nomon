@@ -4,6 +4,8 @@ import (
 	"errors"
 	"io/ioutil"
 
+	"log"
+
 	"github.com/Setom29/CloudronMonitoring/pkg/monitor"
 	"github.com/Setom29/CloudronMonitoring/pkg/report"
 	"gopkg.in/yaml.v3"
@@ -17,6 +19,7 @@ type Config struct {
 func Parse(cfgFile string) (monitor.Args, report.Report, error) {
 	file, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
+		log.Println("Error reading config file: ", err)
 		return monitor.Args{}, report.Report{}, err
 	}
 
@@ -40,7 +43,6 @@ func Parse(cfgFile string) (monitor.Args, report.Report, error) {
 }
 
 func validateArgs(cfg Config) error {
-
 	if cfg.Args.CPULimit > 100 || cfg.Args.CPULimit < 0 {
 		return errors.New("wrong value for CPU limit")
 	}
@@ -57,5 +59,9 @@ func validateArgs(cfg Config) error {
 	if cfg.Args.DBClearTime > 23 || cfg.Args.DBClearTime < 0 {
 		return errors.New("wrong value for db_clear_time")
 	}
+	if cfg.Args.MonitorLogLevel > 6 || cfg.Args.MonitorLogLevel < 1 {
+		return errors.New("wrong value for monitor_log_level")
+	}
+
 	return nil
 }

@@ -2,9 +2,9 @@ package report
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/containrrr/shoutrrr"
+	log "github.com/sirupsen/logrus"
 )
 
 type Report struct {
@@ -17,20 +17,24 @@ type Report struct {
 }
 
 func (r *Report) SendMessage(msg string) {
+	log.Trace("report:SendMessage")
 	r.Message = msg
 	r.MakeURL()
 	r.Report()
+	log.Debug("Message sent: ", r.Message)
 
 }
 
 func (r *Report) MakeURL() {
+	log.Trace("report:MakeURL")
 	if r.Service == "matrix" {
 		r.URL = fmt.Sprintf("matrix://:%s@%s/?rooms=%s", r.MatrixAccessToken, r.MatrixHostServer, r.MatrixRoomID)
 	}
 }
 
 func (r *Report) Report() {
+	log.Trace("report:Report")
 	if err := shoutrrr.Send(r.URL, r.Message); err != nil {
-		log.Println("Error sending report, ", err)
+		log.Error("Error sending report, ", err)
 	}
 }

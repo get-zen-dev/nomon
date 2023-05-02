@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"os"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"github.com/Setom29/CloudronMonitoring/pkg/dbConn"
 	"github.com/Setom29/CloudronMonitoring/pkg/getServerStats"
 	"github.com/Setom29/CloudronMonitoring/pkg/report"
+	log "github.com/sirupsen/logrus"
 )
 
 type Monitor struct {
@@ -32,23 +32,25 @@ type Counters struct {
 }
 
 type Args struct {
-	CPULimit    float64 `yaml:"cpu_limit"`
-	CPUCycles   int     `yaml:"cpu_cycles"`
-	RAMLimit    float64 `yaml:"ram_limit"`
-	RAMCycles   int     `yaml:"ram_cycles"`
-	DiskLimit   float64 `yaml:"disk_limit"`
-	DiskCycles  int     `yaml:"disk_cycles"`
-	Duration    int     `yaml:"duration"`
-	Port        int     `yaml:"port"`
-	DBClearTime int     `yaml:"db_clear_time"`
-	CheckTime   int
-	DBFile      string
+	CPULimit        float64 `yaml:"cpu_limit"`
+	CPUCycles       int     `yaml:"cpu_cycles"`
+	RAMLimit        float64 `yaml:"ram_limit"`
+	RAMCycles       int     `yaml:"ram_cycles"`
+	DiskLimit       float64 `yaml:"disk_limit"`
+	DiskCycles      int     `yaml:"disk_cycles"`
+	Duration        int     `yaml:"duration"`
+	Port            int     `yaml:"port"`
+	DBClearTime     int     `yaml:"db_clear_time"`
+	MonitorLogLevel int     `yaml:"monitor_log_level"`
+	CheckTime       int
+	DBFile          string
 }
 
 func NewMonitor(args Args, r report.Report) *Monitor {
+	log.Trace("monitor:NewMonitor")
 	db, err := dbConn.NewDB(args.DBFile)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error creating database: ", err)
 	}
 	ramTotal, _, diskTotal := getServerStats.GetTotalMetrics()
 	t := time.Now().UTC()
@@ -64,27 +66,31 @@ func NewMonitor(args Args, r report.Report) *Monitor {
 		LastCheck:     t,
 		LastClearTime: t,
 	}
+	log.Debug("New monitor created")
 	return &m
 }
 
 // StartMonitoring creates new db connection and pushes statistics to the database
 func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
-	log.Println("Start monitoring")
+	log.Trace("monitor:StartMonitoring")
+	log.Info("Start monitoring")
 	for {
 		select {
-		case <-ch:
+		case s := <-ch:
+			log.Debug("Got signal: ", s)
 			monitor.DB.Close()
 			os.Exit(0)
 		default:
-
+			log.Debug("Monitoring iteration")
 			stat := dbConn.ServerStatus{
 				CPUUsed:  getServerStats.GetCpu(monitor.Args.CheckTime),
 				RAMUsed:  getServerStats.GetMem(),
 				DiskUsed: getServerStats.GetDisk(),
-				Time:     time.Now()}
+				Time:     time.Now(),
+			}
 			err := monitor.DB.Add(stat)
 			if err != nil {
-				log.Println("Error adding stats:", err)
+				log.Error("Error adding stats: ", err)
 			}
 			monitor.Analyse()
 			monitor.ClearDatabase()
@@ -94,6 +100,7 @@ func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 
 // CheckStatus reads data from database and alerts if metric's usage limit exceeded
 func (monitor *Monitor) Analyse() {
+	log.Trace("monitor:Analyse")
 	if time.Now().UTC().Before(monitor.LastCheck.Add(time.Duration(monitor.Args.Duration) * time.Second)) {
 		return
 	} else {
@@ -101,10 +108,10 @@ func (monitor *Monitor) Analyse() {
 	}
 	rows, err := monitor.DB.Sql.Query(fmt.Sprintf("SELECT * FROM serverStatus WHERE time >= Datetime('now', '-%d seconds', 'localtime');", monitor.Args.Duration))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error getting rows from db: ", err)
 	}
 	defer rows.Close()
-
+	log.Trace("Calculating the cumulative sum for metrics")
 	// cumulative sum for metrics
 	counter := 0
 	cpuUsedCumSum, ramUsedCumSum, diskUsedCumSum := 0.0, 0.0, 0.0
@@ -113,7 +120,7 @@ func (monitor *Monitor) Analyse() {
 		stat := dbConn.ServerStatus{}
 		err := rows.Scan(&stat.Time, &stat.CPUUsed, &stat.RAMUsed, &stat.DiskUsed)
 		if err != nil {
-			log.Println("Error scanning server status:", err)
+			log.Error("Error scanning rows: ", err)
 			continue
 		}
 		cpuUsedCumSum += stat.CPUUsed
@@ -123,17 +130,20 @@ func (monitor *Monitor) Analyse() {
 
 	// alert check
 	msg := monitor.AnilizeStatistics(cpuUsedCumSum/float64(counter), ramUsedCumSum/float64(counter), diskUsedCumSum/float64(counter))
+	log.Debug("Alert check message: ", msg)
 
 	if msg != "" {
-		log.Println(msg)
+		log.Warn(msg)
 		monitor.Report.SendMessage(msg)
 	}
 }
 
 // AnilizeStatistics gets statistics values, checks for alerts and returns message for reporting
 func (monitor *Monitor) AnilizeStatistics(cpuStat, ramStat, diskStat float64) string {
+	log.Trace("monitor:AnilizeStatistics")
+	log.Infof("CPU: %f%%, RAM: %f%%, Disk: %f%%", cpuStat, ramStat/float64(monitor.RAMTotal)*100, diskStat/float64(monitor.DiskTotal)*100)
 	msgArr := make([]string, 0)
-	msgArr = append(msgArr, fmt.Sprintf("CPU: %f%%, RAM: %f%%, Disk: %f%%", cpuStat, ramStat/float64(monitor.RAMTotal)*100, diskStat/float64(monitor.DiskTotal)*100))
+
 	// CPU
 	if cpuStat > monitor.Args.CPULimit {
 		monitor.Counters.CPUCounter++
@@ -183,12 +193,13 @@ func (monitor *Monitor) AnilizeStatistics(cpuStat, ramStat, diskStat float64) st
 }
 
 func (monitor *Monitor) ClearDatabase() {
+	log.Trace("monitor:ClearDatabase")
 	if currTime := time.Now().UTC(); currTime.Hour() >= monitor.Args.DBClearTime && currTime.Hour() < monitor.Args.DBClearTime+1 &&
 		currTime.After(monitor.LastClearTime.AddDate(0, 0, 1)) {
-		log.Println("Start clearing outdated values")
+		log.Info("Start clearing outdated values")
 		_, err := monitor.DB.Sql.Exec(fmt.Sprintf("DELETE FROM serverStatus WHERE time < Datetime('now', '-%d seconds', 'localtime');", monitor.Args.Duration))
 		if err != nil {
-			log.Println(err)
+			log.Error("Error clearing db: ", err)
 		}
 	}
 }
