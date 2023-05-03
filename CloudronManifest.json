@@ -1,7 +1,7 @@
 {
   "id": "nomon.srg.potemkin.co",
   "title": "nomon",
-  "author": "Sergei Tolstov",
+  "author": "Sergei Tolstov <sergeymtolstov35@gmail.com>",
   "description": "Monitoring app",
   "tagline": "A great beginning",
   "version": "0.0.1",

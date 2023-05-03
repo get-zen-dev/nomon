@@ -14,7 +14,7 @@ WORKDIR /app
 COPY . .
 
 # Build the project
-RUN go build -o main ./cmd/monitoringTool/main.go
+RUN go build -o main ./cmd/nomon/main.go
 
 FROM alpine:3.14
 
