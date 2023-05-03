@@ -1,6 +1,6 @@
 {
-  "id": "mymonitor.srg.potemkin.co",
-  "title": "mymonitor",
+  "id": "nomon.srg.potemkin.co",
+  "title": "nomon",
   "author": "Sergei Tolstov",
   "description": "Monitoring app",
   "tagline": "A great beginning",
@@ -11,7 +11,7 @@
     "localstorage": {}
   },
   "manifestVersion": 2,
-  "website": "https://github.com/Setom29/CloudronMonitoring",
+  "website": "https://github.com/get-zen-dev/nomon",
   "contactEmail": "support@clourdon.io",
   "icon": "file://icon.png",
   "tags": [ "monitoring" ],
