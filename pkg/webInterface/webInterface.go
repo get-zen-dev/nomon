@@ -19,7 +19,7 @@ func MakeIndexHandler(m *monitor.Monitor) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// define a struct that contains the values to be passed to the HTML template
 		data := IndexData{
-			Message:   "Last check",
+			Message:   m.Message,
 			LastCheck: m.LastCheck,
 		}
 

@@ -7,59 +7,52 @@ import (
 	"log"
 
 	"github.com/Setom29/CloudronMonitoring/pkg/monitor"
-	"github.com/Setom29/CloudronMonitoring/pkg/report"
 	"gopkg.in/yaml.v3"
 )
 
-type Config struct {
-	Args   monitor.Args  `yaml:"args"`
-	Report report.Report `yaml:"report"`
-}
-
-func Parse(cfgFile string) (monitor.Args, report.Report, error) {
+func Parse(cfgFile string) (monitor.Config, error) {
 	file, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
 		log.Println("Error reading config file: ", err)
-		return monitor.Args{}, report.Report{}, err
+		return monitor.Config{}, err
 	}
 
-	var cfg Config
+	var cfg monitor.Config
 
 	err = yaml.Unmarshal(file, &cfg)
 	if err != nil {
-		return monitor.Args{}, report.Report{}, err
+		return monitor.Config{}, err
 	}
 
 	if err = validateArgs(cfg); err != nil {
-		return monitor.Args{}, report.Report{}, err
+		return monitor.Config{}, err
 	}
-
-	cfg.Report.Message = ""
-	cfg.Report.URL = ""
-	cfg.Args.CheckTime = 5
-	cfg.Args.DBFile = "./data/sqlite.db"
-	return cfg.Args,
-		cfg.Report, nil
+	cfg.CPUCycles = 1
+	cfg.RAMCycles = 1
+	cfg.DiskCycles = 1
+	cfg.CheckTime = 5
+	cfg.DBFile = "./data/sqlite.db"
+	return cfg, nil
 }
 
-func validateArgs(cfg Config) error {
-	if cfg.Args.CPULimit > 100 || cfg.Args.CPULimit < 0 {
+func validateArgs(cfg monitor.Config) error {
+	if cfg.CpuAlertThreshold > 100 || cfg.CpuAlertThreshold < 0 {
 		return errors.New("wrong value for CPU limit")
 	}
-	if cfg.Args.RAMLimit > 100 || cfg.Args.RAMLimit < 0 {
+	if cfg.RamAlertThreshold > 100 || cfg.RamAlertThreshold < 0 {
 		return errors.New("wrong value for RAM limit")
 	}
-	if cfg.Args.CPULimit > 100 || cfg.Args.CPULimit < 0 {
+	if cfg.DiskAlertThreshold > 100 || cfg.DiskAlertThreshold < 0 {
 		return errors.New("wrong value for Disk limit")
 	}
-	if cfg.Args.Duration < 0 {
+	if cfg.CheckEvery < 0 {
 		return errors.New("wrong value for duration")
 	}
 	// Parse time value
-	if cfg.Args.DBClearTime > 23 || cfg.Args.DBClearTime < 0 {
+	if cfg.OldDataCleanup > 23 || cfg.OldDataCleanup < 0 {
 		return errors.New("wrong value for db_clear_time")
 	}
-	if cfg.Args.MonitorLogLevel > 6 || cfg.Args.MonitorLogLevel < 1 {
+	if cfg.LogLevel > 6 || cfg.LogLevel < 1 {
 		return errors.New("wrong value for monitor_log_level")
 	}
 
