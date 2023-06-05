@@ -10,15 +10,15 @@ import (
 
 	"github.com/Setom29/CloudronMonitoring/pkg/dbConn"
 	"github.com/Setom29/CloudronMonitoring/pkg/getServerStats"
-	"github.com/Setom29/CloudronMonitoring/pkg/report"
+	"github.com/containrrr/shoutrrr"
 	log "github.com/sirupsen/logrus"
 )
 
 type Monitor struct {
 	DB            *dbConn.DB
-	Args          Args
-	Report        report.Report
+	Cfg           Config
 	Counters      Counters
+	Message       string
 	WG            *sync.WaitGroup
 	RAMTotal      uint64
 	DiskTotal     uint64
@@ -31,33 +31,33 @@ type Counters struct {
 	DiskCounter int
 }
 
-type Args struct {
-	CPULimit        float64 `yaml:"cpu_limit"`
-	CPUCycles       int     `yaml:"cpu_cycles"`
-	RAMLimit        float64 `yaml:"ram_limit"`
-	RAMCycles       int     `yaml:"ram_cycles"`
-	DiskLimit       float64 `yaml:"disk_limit"`
-	DiskCycles      int     `yaml:"disk_cycles"`
-	Duration        int     `yaml:"duration"`
-	Port            int     `yaml:"port"`
-	DBClearTime     int     `yaml:"db_clear_time"`
-	MonitorLogLevel int     `yaml:"monitor_log_level"`
-	CheckTime       int
-	DBFile          string
+type Config struct {
+	CpuAlertThreshold  float64  `yaml:"cpu_alert_threshold"`
+	RamAlertThreshold  float64  `yaml:"ram_alert_threshold"`
+	DiskAlertThreshold float64  `yaml:"disk_alert_threshold"`
+	CheckEvery         int      `yaml:"check_every"`
+	Port               int      `yaml:"port"`
+	OldDataCleanup     int      `yaml:"old_data_cleanup"`
+	LogLevel           int      `yaml:"log_level"`
+	URLS               []string `yaml:"urls"`
+	CPUCycles          int
+	RAMCycles          int
+	DiskCycles         int
+	CheckTime          int
+	DBFile             string
 }
 
-func NewMonitor(args Args, r report.Report) *Monitor {
+func NewMonitor(config Config) *Monitor {
 	log.Trace("monitor:NewMonitor")
-	db, err := dbConn.NewDB(args.DBFile)
+	db, err := dbConn.NewDB(config.DBFile)
 	if err != nil {
 		log.Fatal("Error creating database: ", err)
 	}
 	ramTotal, _, diskTotal := getServerStats.GetTotalMetrics()
-	t := time.Now().UTC()
+	t := time.Now()
 	m := Monitor{
 		DB:       db,
-		Args:     args,
-		Report:   r,
+		Cfg:      config,
 		Counters: Counters{CPUCounter: 0, RAMCounter: 0, DiskCounter: 0},
 		WG:       &sync.WaitGroup{},
 
@@ -82,7 +82,7 @@ func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 			os.Exit(0)
 		default:
 			stat := dbConn.ServerStatus{
-				CPUUsed:  getServerStats.GetCpu(monitor.Args.CheckTime),
+				CPUUsed:  getServerStats.GetCpu(monitor.Cfg.CheckTime),
 				RAMUsed:  getServerStats.GetMem(),
 				DiskUsed: getServerStats.GetDisk(),
 				Time:     time.Now(),
@@ -101,12 +101,12 @@ func (monitor *Monitor) StartMonitoring(ch chan os.Signal) {
 // CheckStatus reads data from database and alerts if metric's usage limit exceeded
 func (monitor *Monitor) Analyse() {
 	log.Trace("monitor:Analyse")
-	if time.Now().UTC().Before(monitor.LastCheck.Add(time.Duration(monitor.Args.Duration) * time.Second)) {
+	if time.Now().Before(monitor.LastCheck.Add(time.Duration(monitor.Cfg.CheckEvery) * time.Second)) {
 		return
 	} else {
-		monitor.LastCheck = time.Now().UTC()
+		monitor.LastCheck = time.Now()
 	}
-	rows, err := monitor.DB.Sql.Query(fmt.Sprintf("SELECT * FROM serverStatus WHERE time >= Datetime('now', '-%d seconds', 'localtime');", monitor.Args.Duration))
+	rows, err := monitor.DB.Sql.Query(fmt.Sprintf("SELECT * FROM serverStatus WHERE time >= Datetime('now', '-%d seconds', 'localtime');", monitor.Cfg.CheckEvery))
 	if err != nil {
 		log.Fatal("Error getting rows from db: ", err)
 	}
@@ -133,8 +133,14 @@ func (monitor *Monitor) Analyse() {
 	log.Debug("Alert check message: ", msg)
 
 	if msg != "" {
+		monitor.Message = msg
 		log.Warn(msg)
-		monitor.Report.SendMessage(msg)
+		for ind := range monitor.Cfg.URLS {
+			if err := shoutrrr.Send(monitor.Cfg.URLS[ind], msg); err != nil {
+				log.Error("Error sending report, ", err)
+			}
+		}
+		log.Trace("Message sent")
 	}
 }
 
@@ -145,45 +151,45 @@ func (monitor *Monitor) AnilizeStatistics(cpuStat, ramStat, diskStat float64) st
 	msgArr := make([]string, 0)
 
 	// CPU
-	if cpuStat > monitor.Args.CPULimit {
+	if cpuStat > monitor.Cfg.CpuAlertThreshold {
 		monitor.Counters.CPUCounter++
-		if monitor.Counters.CPUCounter >= monitor.Args.CPUCycles {
+		if monitor.Counters.CPUCounter >= monitor.Cfg.CPUCycles {
 			msgArr = append(msgArr, fmt.Sprintf("CPU usage limit exceeded: %f%%", cpuStat))
 		}
 	} else {
-		if monitor.Counters.CPUCounter >= monitor.Args.CPUCycles {
+		if monitor.Counters.CPUCounter >= monitor.Cfg.CPUCycles {
 			msgArr = append(msgArr, "CPU usage within normal limits.")
 		}
 		monitor.Counters.CPUCounter = 0
 	}
 
 	// RAM
-	if ramStat/float64(monitor.RAMTotal)*100 > monitor.Args.RAMLimit {
+	if ramStat/float64(monitor.RAMTotal)*100 > monitor.Cfg.RamAlertThreshold {
 		monitor.Counters.RAMCounter++
-		if monitor.Counters.RAMCounter >= monitor.Args.RAMCycles {
+		if monitor.Counters.RAMCounter >= monitor.Cfg.RAMCycles {
 			msgArr = append(msgArr, fmt.Sprintf("RAM usage limit exceeded: %f%% (%f GB /%f GB)",
 				ramStat/float64(monitor.RAMTotal)*100,
 				ramStat/math.Pow(1024, 3),
 				float64(monitor.RAMTotal)/math.Pow(1024, 3)))
 		}
 	} else {
-		if monitor.Counters.RAMCounter >= monitor.Args.RAMCycles {
+		if monitor.Counters.RAMCounter >= monitor.Cfg.RAMCycles {
 			msgArr = append(msgArr, "RAM usage within normal limits.")
 		}
 		monitor.Counters.RAMCounter = 0
 	}
 
 	// Disk
-	if diskStat/float64(monitor.DiskTotal)*100 > monitor.Args.DiskLimit {
+	if diskStat/float64(monitor.DiskTotal)*100 > monitor.Cfg.DiskAlertThreshold {
 		monitor.Counters.DiskCounter++
-		if monitor.Counters.DiskCounter >= monitor.Args.DiskCycles {
+		if monitor.Counters.DiskCounter >= monitor.Cfg.DiskCycles {
 			msgArr = append(msgArr, fmt.Sprintf("Disk usage limit exceeded: %f%% (%f GB /%f GB)",
 				diskStat/float64(monitor.DiskTotal)*100,
 				diskStat/math.Pow(1024, 3),
 				float64(monitor.DiskTotal)/math.Pow(1024, 3)))
 		}
 	} else {
-		if monitor.Counters.DiskCounter >= monitor.Args.DiskCycles {
+		if monitor.Counters.DiskCounter >= monitor.Cfg.DiskCycles {
 			msgArr = append(msgArr, "Disk usage within normal limits.")
 		}
 		monitor.Counters.DiskCounter = 0
@@ -194,10 +200,10 @@ func (monitor *Monitor) AnilizeStatistics(cpuStat, ramStat, diskStat float64) st
 
 func (monitor *Monitor) ClearDatabase() {
 	log.Trace("monitor:ClearDatabase")
-	if currTime := time.Now().UTC(); currTime.Hour() >= monitor.Args.DBClearTime && currTime.Hour() < monitor.Args.DBClearTime+1 &&
+	if currTime := time.Now(); currTime.Hour() >= monitor.Cfg.OldDataCleanup && currTime.Hour() < monitor.Cfg.OldDataCleanup+1 &&
 		currTime.After(monitor.LastClearTime.AddDate(0, 0, 1)) {
 		log.Info("Start clearing outdated values")
-		_, err := monitor.DB.Sql.Exec(fmt.Sprintf("DELETE FROM serverStatus WHERE time < Datetime('now', '-%d seconds', 'localtime');", monitor.Args.Duration))
+		_, err := monitor.DB.Sql.Exec(fmt.Sprintf("DELETE FROM serverStatus WHERE time < Datetime('now', '-%d seconds', 'localtime');", monitor.Cfg.CheckEvery))
 		if err != nil {
 			log.Error("Error clearing db: ", err)
 		}

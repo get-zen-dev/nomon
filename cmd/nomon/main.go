@@ -23,19 +23,19 @@ func setLogs(lvl int) {
 
 func main() {
 	log.Trace("main:main")
-	args, report, err := parseConfig.Parse("./data/config.yml")
+	args, err := parseConfig.Parse("./data/config.yml")
 	if err != nil {
 		log.Fatal("Error parsing config: ", err)
 		return
 	}
-	setLogs(args.MonitorLogLevel)
+	setLogs(args.LogLevel)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)
 
-	m := monitor.NewMonitor(args, report)
-	log.Debug(m.Args)
+	m := monitor.NewMonitor(args)
+	log.Debug(m.Cfg)
 	go m.StartMonitoring(sigChan)
 	http.HandleFunc("/", webInterface.MakeIndexHandler(m))
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", m.Args.Port), nil))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", m.Cfg.Port), nil))
 }
