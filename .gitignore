@@ -1,9 +1,3 @@
-config.yml
-
-Notes.txt
-
 .vscode/launch.json
-
-serverStats.db
 
 sqlite.db

@@ -1,6 +1,3 @@
-# nomon
-
-#### Config example:
 cpu_alert_threshold: 50 #percentage
 ram_alert_threshold: 50 #percentage
 disk_alert_threshold: 50 #percentage
