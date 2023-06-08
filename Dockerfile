@@ -1,5 +1,7 @@
 FROM golang:alpine AS build
 
+LABEL org.opencontainers.image.source = "https://github.com/get-zen-dev/nomon"
+
 # Install any dependencies required by your project
 RUN apk add --no-cache git && \
     apk add --no-cache --virtual .build-deps \
