@@ -1,10 +1,10 @@
 {
-  "id": "nomon.srg.potemkin.co",
+  "id": "nomon.getzen.dev",
   "title": "nomon",
   "author": "Sergei Tolstov <sergeymtolstov35@gmail.com>",
   "description": "Monitoring app",
-  "tagline": "A great beginning",
-  "version": "0.0.1",
+  "tagline": "Simple server resources monitoring app",
+  "version": "1.0",
   "healthCheckPath": "/",
   "httpPort": 8000,
   "addons": {
@@ -12,7 +12,7 @@
   },
   "manifestVersion": 2,
   "website": "https://github.com/get-zen-dev/nomon",
-  "contactEmail": "support@clourdon.io",
+  "contactEmail": "",
   "icon": "file://icon.png",
   "tags": [ "monitoring" ],
   "mediaLinks": [ ]
